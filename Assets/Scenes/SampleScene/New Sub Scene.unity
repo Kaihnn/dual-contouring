@@ -168,7 +168,7 @@ MonoBehaviour:
     y: 0
     z: 0
   CellSize: 1
-  Values: ffffffffffffffffffffffffff01ffffffffffffffffffffffffff00
+  Values: ffffffffffffffffffffffffff08ffffffffffffffffffffffffff00
   ShowGizmos: 1
   GizmoSize: 0.1
 --- !u!1660057539 &9223372036854775807

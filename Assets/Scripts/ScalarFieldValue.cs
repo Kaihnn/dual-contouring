@@ -1,8 +1,12 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-public struct ScalarFieldValue : IBufferElementData
+namespace DualContouring
 {
-    public float Value;
-    public float3 Position;
+    public struct ScalarFieldValue : IBufferElementData
+    {
+        public float Value;
+        public float3 Position;
+    }
 }
+

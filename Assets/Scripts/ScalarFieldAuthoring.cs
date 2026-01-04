@@ -27,6 +27,7 @@ namespace DualContouring
                 return;
             }
 
+            // Visualiser les valeurs du champ scalaire
             int index = 0;
             for (int y = 0; y < 3; y++)
             {
@@ -57,6 +58,13 @@ namespace DualContouring
                     }
                 }
             }
+
+            // Visualiser les cellules de dual contouring pendant le jeu
+            if (Application.isPlaying && World.DefaultGameObjectInjectionWorld != null)
+            {
+                var visualizationSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<DualContouringVisualizationSystem>();
+                visualizationSystem?.DrawGizmos();
+            }
         }
 
         private class Baker : Baker<ScalarFieldAuthoring>
@@ -64,6 +72,7 @@ namespace DualContouring
             public override void Bake(ScalarFieldAuthoring authoring)
             {
                 Entity entity = GetEntity(TransformUsageFlags.None);
+                AddBuffer<DualContouringCell>(entity);
                 DynamicBuffer<ScalarFieldValue> buffer = AddBuffer<ScalarFieldValue>(entity);
 
                 // Générer les valeurs scalaires selon le type
