@@ -1,0 +1,103 @@
+# .gitignore for Unity projects
+# Generated for Unity (recommended)
+
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+[Aa]ssets/[Ss]amples/
+[Aa]ssets/[Ss]amples/
+[Aa]ssets/[Ss]amples.meta
+[Aa]ssets/SceneDependencyCache/
+[Aa]ssets/_Recovery/
+[Aa]ssets/[Tt]extMesh Pro
+[Aa]ssets/[Tt]extMesh Pro.meta
+[Aa]ssets/[Ss]amples.meta
+[Uu]serSettings/
+
+# Asset meta data
+*.pidb.meta
+*.pidb
+*.suo
+*.user
+*.userprefs
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.userprefs
+*.user
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity3D generated files
+sysinfo.txt
+*.booproj
+*.svd
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+desktop.ini
+Thumbs.db
+
+# Visual Studio / Rider
+.vscode/
+.vscode/*
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+
+# Prevent committing local build output
+Build/
+Builds/
+
+# Exclude crash reports and debug files
+crashlytics-build.properties
+
+# Exclude auto-generated plugin caches
+/Assets/Plugins/**/Editor/**/node_modules/
+
+# Exclude package caches
+/Library/PackageCache/
+/Library/Bee/
+/Library/ScriptAssemblies/
+
+# Exclude Unity object serialization backups and local settings
+/Logs/
+/obj/
+/Temp/
+
+# Exclude Rider caches
+.idea/
+*.sublime-workspace
+
+# Gradle files (if using Android builds)
+.gradle/
+
+# Ignore LFS pointer files if you check them in accidentally
+*.gitattributes
+
+# Keep track of meta files (do NOT ignore) - Unity needs .meta files next to assets
+# (no patterns here - included as note)
+
