@@ -1,8 +1,8 @@
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
-using DualContouring;
-    /// <summary>
+
+/// <summary>
     ///     Système qui remplit le buffer DualContouringCell à partir du ScalarField
     /// </summary>
     [BurstCompile]
@@ -17,21 +17,25 @@ using DualContouring;
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            foreach (var (scalarFieldBuffer, cellBuffer) in SystemAPI.Query<
+            foreach (var (scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer) in SystemAPI.Query<
                          DynamicBuffer<ScalarFieldValue>,
-                         DynamicBuffer<DualContouringCell>>())
+                         DynamicBuffer<DualContouringCell>,
+                         DynamicBuffer<DualContouringEdgeIntersection>>())
             {
                 cellBuffer.Clear();
+                edgeIntersectionBuffer.Clear();
 
-                // Pour dual contouring, on traite les cellules 2x2x2
+                // Pour dual contouring, on traite les cellules (gridSize - 1)^3
                 // Avec une grille 3x3x3, on a 2x2x2 = 8 cellules possibles
-                for (int y = 0; y < 2; y++)
+                int3 cellGridSize = ScalarFieldUtility.DefaultGridSize - new int3(1, 1, 1);
+                
+                for (int y = 0; y < cellGridSize.y; y++)
                 {
-                    for (int z = 0; z < 2; z++)
+                    for (int z = 0; z < cellGridSize.z; z++)
                     {
-                        for (int x = 0; x < 2; x++)
+                        for (int x = 0; x < cellGridSize.x; x++)
                         {
-                            ProcessCell(scalarFieldBuffer, cellBuffer, new int3(x, y, z));
+                            ProcessCell(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, new int3(x, y, z));
                         }
                     }
                 }
@@ -44,6 +48,7 @@ using DualContouring;
         private void ProcessCell(
             DynamicBuffer<ScalarFieldValue> scalarField,
             DynamicBuffer<DualContouringCell> cells,
+            DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             int3 cellIndex)
         {
             // Récupérer les 8 coins de la cellule
@@ -64,7 +69,7 @@ using DualContouring;
                 );
 
                 int3 cornerIndex = cellIndex + offset;
-                int scalarIndex = GetScalarFieldIndex(cornerIndex, new int3(3, 3, 3));
+                int scalarIndex = ScalarFieldUtility.CoordToIndex(cornerIndex, ScalarFieldUtility.DefaultGridSize);
 
                 if (scalarIndex >= 0 && scalarIndex < scalarField.Length)
                 {
@@ -100,7 +105,7 @@ using DualContouring;
             // Si on a une intersection, calculer une meilleure position du vertex
             if (hasVertex)
             {
-                vertexPosition = CalculateVertexPosition(scalarField, cellIndex, cellSize);
+                vertexPosition = CalculateVertexPosition(scalarField, edgeIntersections, cellIndex, cellSize);
             }
 
             // Ajouter la cellule au buffer
@@ -118,6 +123,7 @@ using DualContouring;
         /// </summary>
         private float3 CalculateVertexPosition(
             DynamicBuffer<ScalarFieldValue> scalarField,
+            DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             int3 cellIndex,
             float cellSize)
         {
@@ -126,6 +132,10 @@ using DualContouring;
 
             float3 sum = float3.zero;
             int count = 0;
+            
+            // Calculer l'index de la cellule pour le stocker dans les intersections
+            int3 cellGridSize = ScalarFieldUtility.DefaultGridSize - new int3(1, 1, 1);
+            int currentCellIndex = ScalarFieldUtility.CoordToIndex(cellIndex, cellGridSize);
 
             // Parcourir les 12 arêtes de la cellule
             // Arêtes parallèles à X (4)
@@ -134,10 +144,18 @@ using DualContouring;
                 for (int z = 0; z < 2; z++)
                 {
                     if (TryGetEdgeIntersection(scalarField, cellIndex + new int3(0, y, z),
-                            cellIndex + new int3(1, y, z), out float3 intersection))
+                            cellIndex + new int3(1, y, z), out float3 intersection, out float3 normal))
                     {
                         sum += intersection;
                         count++;
+                        
+                        // Ajouter l'intersection au buffer
+                        edgeIntersections.Add(new DualContouringEdgeIntersection
+                        {
+                            Position = intersection,
+                            Normal = normal,
+                            CellIndex = currentCellIndex
+                        });
                     }
                 }
             }
@@ -148,10 +166,18 @@ using DualContouring;
                 for (int z = 0; z < 2; z++)
                 {
                     if (TryGetEdgeIntersection(scalarField, cellIndex + new int3(x, 0, z),
-                            cellIndex + new int3(x, 1, z), out float3 intersection))
+                            cellIndex + new int3(x, 1, z), out float3 intersection, out float3 normal))
                     {
                         sum += intersection;
                         count++;
+                        
+                        // Ajouter l'intersection au buffer
+                        edgeIntersections.Add(new DualContouringEdgeIntersection
+                        {
+                            Position = intersection,
+                            Normal = normal,
+                            CellIndex = currentCellIndex
+                        });
                     }
                 }
             }
@@ -162,10 +188,18 @@ using DualContouring;
                 for (int y = 0; y < 2; y++)
                 {
                     if (TryGetEdgeIntersection(scalarField, cellIndex + new int3(x, y, 0),
-                            cellIndex + new int3(x, y, 1), out float3 intersection))
+                            cellIndex + new int3(x, y, 1), out float3 intersection, out float3 normal))
                     {
                         sum += intersection;
                         count++;
+                        
+                        // Ajouter l'intersection au buffer
+                        edgeIntersections.Add(new DualContouringEdgeIntersection
+                        {
+                            Position = intersection,
+                            Normal = normal,
+                            CellIndex = currentCellIndex
+                        });
                     }
                 }
             }
@@ -176,7 +210,7 @@ using DualContouring;
             }
 
             // Fallback: centre de la cellule
-            int scalarIndex = GetScalarFieldIndex(cellIndex, new int3(3, 3, 3));
+            int scalarIndex = ScalarFieldUtility.CoordToIndex(cellIndex, ScalarFieldUtility.DefaultGridSize);
             if (scalarIndex >= 0 && scalarIndex < scalarField.Length)
             {
                 return scalarField[scalarIndex].Position + new float3(0.5f, 0.5f, 0.5f) * cellSize;
@@ -192,12 +226,14 @@ using DualContouring;
             DynamicBuffer<ScalarFieldValue> scalarField,
             int3 corner1Index,
             int3 corner2Index,
-            out float3 intersection)
+            out float3 intersection,
+            out float3 normal)
         {
             intersection = float3.zero;
+            normal = float3.zero;
 
-            int idx1 = GetScalarFieldIndex(corner1Index, new int3(3, 3, 3));
-            int idx2 = GetScalarFieldIndex(corner2Index, new int3(3, 3, 3));
+            int idx1 = ScalarFieldUtility.CoordToIndex(corner1Index, ScalarFieldUtility.DefaultGridSize);
+            int idx2 = ScalarFieldUtility.CoordToIndex(corner2Index, ScalarFieldUtility.DefaultGridSize);
 
             if (idx1 < 0 || idx1 >= scalarField.Length || idx2 < 0 || idx2 >= scalarField.Length)
             {
@@ -213,25 +249,76 @@ using DualContouring;
                 // Interpolation linéaire pour trouver le point d'intersection
                 float t = math.abs(v1.Value) / (math.abs(v1.Value) + math.abs(v2.Value));
                 intersection = math.lerp(v1.Position, v2.Position, t);
+                
+                // Calculer la normale en utilisant le gradient (approximation par différence finie)
+                normal = CalculateNormal(scalarField, intersection);
+                
                 return true;
             }
 
             return false;
         }
-
+        
         /// <summary>
-        ///     Convertit un index 3D en index 1D dans le buffer
+        ///     Calcule la normale au point d'intersection en utilisant le gradient du champ scalaire
         /// </summary>
-        private int GetScalarFieldIndex(int3 index, int3 gridSize)
+        private float3 CalculateNormal(DynamicBuffer<ScalarFieldValue> scalarField, float3 position)
         {
-            if (index.x < 0 || index.x >= gridSize.x ||
-                index.y < 0 || index.y >= gridSize.y ||
-                index.z < 0 || index.z >= gridSize.z)
+            // Pour calculer la normale, on utilise le gradient du champ scalaire
+            // La normale est le gradient normalisé
+            // On utilise une différence finie centrée pour approximer le gradient
+            
+            float epsilon = 0.01f;
+            
+            // Gradient en X
+            float valueXPlus = SampleScalarField(scalarField, position + new float3(epsilon, 0, 0));
+            float valueXMinus = SampleScalarField(scalarField, position - new float3(epsilon, 0, 0));
+            float gradX = (valueXPlus - valueXMinus) / (2.0f * epsilon);
+            
+            // Gradient en Y
+            float valueYPlus = SampleScalarField(scalarField, position + new float3(0, epsilon, 0));
+            float valueYMinus = SampleScalarField(scalarField, position - new float3(0, epsilon, 0));
+            float gradY = (valueYPlus - valueYMinus) / (2.0f * epsilon);
+            
+            // Gradient en Z
+            float valueZPlus = SampleScalarField(scalarField, position + new float3(0, 0, epsilon));
+            float valueZMinus = SampleScalarField(scalarField, position - new float3(0, 0, epsilon));
+            float gradZ = (valueZPlus - valueZMinus) / (2.0f * epsilon);
+            
+            float3 gradient = new float3(gradX, gradY, gradZ);
+            
+            // Normaliser le gradient pour obtenir la normale
+            float length = math.length(gradient);
+            if (length > 0.0001f)
             {
-                return -1;
+                return math.normalize(gradient);
             }
-
-            return index.x + index.y * gridSize.x * gridSize.z + index.z * gridSize.x;
+            
+            // Si le gradient est trop petit, retourner une normale par défaut
+            return new float3(0, 1, 0);
+        }
+        
+        /// <summary>
+        ///     Échantillonne le champ scalaire à une position donnée (interpolation trilinéaire)
+        /// </summary>
+        private float SampleScalarField(DynamicBuffer<ScalarFieldValue> scalarField, float3 position)
+        {
+            // Trouver le point le plus proche dans le champ scalaire
+            // Pour simplifier, on utilise le nearest neighbor
+            float minDist = float.MaxValue;
+            float value = 0;
+            
+            for (int i = 0; i < scalarField.Length; i++)
+            {
+                float dist = math.distance(scalarField[i].Position, position);
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    value = scalarField[i].Value;
+                }
+            }
+            
+            return value;
         }
     }
 
