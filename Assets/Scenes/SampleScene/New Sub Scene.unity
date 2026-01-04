@@ -168,11 +168,11 @@ MonoBehaviour:
     y: 0
     z: 0
   CellSize: 1
-  Values: ffffffffffffffffffff7fffff7fffffffffffffffffffffffffff00
+  Values: ffffffffffffffffffffffffff5effffffffffffffffffffffffff00
   ShowGizmos: 1
   GizmoSize: 0.1
   SelectedCell:
-    x: 0
+    x: 1
     y: 0
     z: 0
 --- !u!1660057539 &9223372036854775807

@@ -119,7 +119,7 @@ using Unity.Mathematics;
         }
 
         /// <summary>
-        ///     Calcule la position du vertex dans une cellule (version simplifiée)
+        ///     Calcule la position du vertex dans une cellule en utilisant QEF (Quadratic Error Function)
         /// </summary>
         private float3 CalculateVertexPosition(
             DynamicBuffer<ScalarFieldValue> scalarField,
@@ -127,15 +127,15 @@ using Unity.Mathematics;
             int3 cellIndex,
             float cellSize)
         {
-            // Version simplifiée: on trouve les arêtes qui intersectent la surface
-            // et on fait la moyenne des points d'intersection
-
-            float3 sum = float3.zero;
-            int count = 0;
-            
-            // Calculer l'index de la cellule pour le stocker dans les intersections
+            // Collecter toutes les intersections et normales
             int3 cellGridSize = ScalarFieldUtility.DefaultGridSize - new int3(1, 1, 1);
             int currentCellIndex = ScalarFieldUtility.CoordToIndex(cellIndex, cellGridSize);
+            
+            // Structures pour stocker les intersections temporaires
+            float3[] positions = new float3[12];
+            float3[] normals = new float3[12];
+            int count = 0;
+            float3 massPoint = float3.zero; // Centre de masse des intersections
 
             // Parcourir les 12 arêtes de la cellule
             // Arêtes parallèles à X (4)
@@ -146,10 +146,11 @@ using Unity.Mathematics;
                     if (TryGetEdgeIntersection(scalarField, cellIndex + new int3(0, y, z),
                             cellIndex + new int3(1, y, z), out float3 intersection, out float3 normal))
                     {
-                        sum += intersection;
+                        positions[count] = intersection;
+                        normals[count] = normal;
+                        massPoint += intersection;
                         count++;
                         
-                        // Ajouter l'intersection au buffer
                         edgeIntersections.Add(new DualContouringEdgeIntersection
                         {
                             Position = intersection,
@@ -168,10 +169,11 @@ using Unity.Mathematics;
                     if (TryGetEdgeIntersection(scalarField, cellIndex + new int3(x, 0, z),
                             cellIndex + new int3(x, 1, z), out float3 intersection, out float3 normal))
                     {
-                        sum += intersection;
+                        positions[count] = intersection;
+                        normals[count] = normal;
+                        massPoint += intersection;
                         count++;
                         
-                        // Ajouter l'intersection au buffer
                         edgeIntersections.Add(new DualContouringEdgeIntersection
                         {
                             Position = intersection,
@@ -190,10 +192,11 @@ using Unity.Mathematics;
                     if (TryGetEdgeIntersection(scalarField, cellIndex + new int3(x, y, 0),
                             cellIndex + new int3(x, y, 1), out float3 intersection, out float3 normal))
                     {
-                        sum += intersection;
+                        positions[count] = intersection;
+                        normals[count] = normal;
+                        massPoint += intersection;
                         count++;
                         
-                        // Ajouter l'intersection au buffer
                         edgeIntersections.Add(new DualContouringEdgeIntersection
                         {
                             Position = intersection,
@@ -206,17 +209,149 @@ using Unity.Mathematics;
 
             if (count > 0)
             {
-                return sum / count;
+                massPoint /= count;
+                
+                // Utiliser QEF pour trouver la meilleure position
+                float3 vertexPos = SolveQef(positions, normals, count, massPoint);
+                
+                // Contraindre le vertex à l'intérieur de la cellule
+                int scalarIndex = ScalarFieldUtility.CoordToIndex(cellIndex, ScalarFieldUtility.DefaultGridSize);
+                if (scalarIndex >= 0 && scalarIndex < scalarField.Length)
+                {
+                    float3 cellMin = scalarField[scalarIndex].Position;
+                    float3 cellMax = cellMin + new float3(cellSize, cellSize, cellSize);
+                    vertexPos = math.clamp(vertexPos, cellMin, cellMax);
+                }
+                
+                return vertexPos;
             }
 
             // Fallback: centre de la cellule
-            int scalarIndex = ScalarFieldUtility.CoordToIndex(cellIndex, ScalarFieldUtility.DefaultGridSize);
-            if (scalarIndex >= 0 && scalarIndex < scalarField.Length)
+            int fallbackIndex = ScalarFieldUtility.CoordToIndex(cellIndex, ScalarFieldUtility.DefaultGridSize);
+            if (fallbackIndex >= 0 && fallbackIndex < scalarField.Length)
             {
-                return scalarField[scalarIndex].Position + new float3(0.5f, 0.5f, 0.5f) * cellSize;
+                return scalarField[fallbackIndex].Position + new float3(0.5f, 0.5f, 0.5f) * cellSize;
             }
 
             return float3.zero;
+        }
+        
+        /// <summary>
+        ///     Résout le QEF (Quadratic Error Function) pour trouver la position optimale du vertex
+        ///     Minimise la somme des carrés des distances aux plans tangents
+        /// </summary>
+        private float3 SolveQef(float3[] positions, float3[] normals, int count, float3 massPoint)
+        {
+            // On résout le système A^T * A * x = A^T * b
+            // où A est la matrice des normales et b est le vecteur des distances signées
+            
+            // Construire la matrice A^T * A (matrice 3x3 symétrique)
+            float3x3 ata = float3x3.zero;
+            float3 atb = float3.zero;
+            
+            for (int i = 0; i < count; i++)
+            {
+                float3 n = normals[i];
+                float3 p = positions[i];
+                
+                // A^T * A += n * n^T
+                ata.c0 += n * n.x;
+                ata.c1 += n * n.y;
+                ata.c2 += n * n.z;
+                
+                // A^T * b += n * (n · p)
+                float d = math.dot(n, p);
+                atb += n * d;
+            }
+            
+            // Résoudre le système linéaire 3x3 en utilisant l'élimination de Gauss avec pivot partiel
+            float3 result = SolveLinearSystem3X3(ata, atb);
+            
+            // Si la solution échoue (matrice singulière), utiliser le centre de masse
+            if (math.any(math.isnan(result)) || math.any(math.isinf(result)))
+            {
+                return massPoint;
+            }
+            
+            return result;
+        }
+        
+        /// <summary>
+        ///     Résout un système linéaire 3x3: Ax = b en utilisant l'élimination de Gauss
+        /// </summary>
+        private float3 SolveLinearSystem3X3(float3x3 a, float3 b)
+        {
+            // Créer une matrice augmentée [A|b]
+            float epsilon = 1e-10f;
+            
+            // Copier les données dans un format manipulable
+            float3 row0 = new float3(a.c0.x, a.c1.x, a.c2.x);
+            float3 row1 = new float3(a.c0.y, a.c1.y, a.c2.y);
+            float3 row2 = new float3(a.c0.z, a.c1.z, a.c2.z);
+            float3 rhs = b;
+            
+            // Élimination gaussienne - Ligne 0
+            if (math.abs(row0.x) < epsilon)
+            {
+                // Pivoter si nécessaire
+                if (math.abs(row1.x) > math.abs(row0.x))
+                {
+                    float3 temp = row0; row0 = row1; row1 = temp;
+                    float tempB = rhs.x; rhs.x = rhs.y; rhs.y = tempB;
+                }
+                if (math.abs(row2.x) > math.abs(row0.x))
+                {
+                    float3 temp = row0; row0 = row2; row2 = temp;
+                    float tempB = rhs.x; rhs.x = rhs.z; rhs.z = tempB;
+                }
+            }
+            
+            if (math.abs(row0.x) > epsilon)
+            {
+                // Éliminer x de row1 et row2
+                float factor1 = row1.x / row0.x;
+                row1 -= row0 * factor1;
+                rhs.y -= rhs.x * factor1;
+                
+                float factor2 = row2.x / row0.x;
+                row2 -= row0 * factor2;
+                rhs.z -= rhs.x * factor2;
+            }
+            
+            // Élimination gaussienne - Ligne 1
+            if (math.abs(row1.y) < epsilon && math.abs(row2.y) > math.abs(row1.y))
+            {
+                float3 temp = row1; row1 = row2; row2 = temp;
+                float tempB = rhs.y; rhs.y = rhs.z; rhs.z = tempB;
+            }
+            
+            if (math.abs(row1.y) > epsilon)
+            {
+                // Éliminer y de row2
+                float factor = row2.y / row1.y;
+                row2 -= row1 * factor;
+                rhs.z -= rhs.y * factor;
+            }
+            
+            // Substitution arrière
+            float3 result = float3.zero;
+            
+            if (math.abs(row2.z) > epsilon)
+            {
+                result.z = rhs.z / row2.z;
+            }
+            
+            if (math.abs(row1.y) > epsilon)
+            {
+                result.y = (rhs.y - row1.z * result.z) / row1.y;
+            }
+            
+            if (math.abs(row0.x) > epsilon)
+            {
+                result.x = (rhs.x - row0.y * result.y - row0.z * result.z) / row0.x;
+            }
+            
+            return result;
         }
 
         /// <summary>
