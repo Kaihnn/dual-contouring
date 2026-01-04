@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1064507494}
   - component: {fileID: 1064507495}
+  - component: {fileID: 1064507496}
   m_Layer: 0
   m_Name: ScalarField
   m_TagString: Untagged
@@ -168,13 +169,33 @@ MonoBehaviour:
     y: 0
     z: 0
   CellSize: 1
-  Values: ffffffffffffffffffffffffff5effffffffffffffffffffffffff00
+  Values: ffffffffffffffffffffffffffffffffffffffffffffffffffffff
   ShowGizmos: 1
   GizmoSize: 0.1
   SelectedCell:
-    x: 1
+    x: -13
     y: 0
     z: 0
+--- !u!114 &1064507496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1064507493}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee8ca4038b5402e87efed7e957de142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringExample
+  instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
+    un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
+    ci-dessous."
+  sphereValues: ffffffff32ffffffffff32ff327f32ff32ffffffffff32ffffffff
+  cubeValues: ffffffffffffffffffffffffff7fffffffffffffffffffffffffff
+  planeValues: ffffffffffffffffff3232323232323232327f7f7f7f7f7f7f7f7f
+  cornerValues: ffffffffffffffffffffffffff7f7fff7f7fffffffff7f7fff7f7f
+  exampleToApply: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

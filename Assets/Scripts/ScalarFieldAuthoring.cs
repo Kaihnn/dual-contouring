@@ -77,6 +77,8 @@ public class ScalarFieldAuthoring : MonoBehaviour
             });
             AddBuffer<DualContouringCell>(entity);
             AddBuffer<DualContouringEdgeIntersection>(entity);
+            AddBuffer<DualContouringMeshVertex>(entity);
+            AddBuffer<DualContouringMeshTriangle>(entity);
             DynamicBuffer<ScalarFieldValue> buffer = AddBuffer<ScalarFieldValue>(entity);
 
             // Générer les valeurs scalaires selon le type
