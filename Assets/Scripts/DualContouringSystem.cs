@@ -403,7 +403,24 @@ using Unity.Mathematics;
             // La normale est le gradient normalisé
             // On utilise une différence finie centrée pour approximer le gradient
             
-            float epsilon = 0.01f;
+            // Déterminer la taille de cellule pour adapter epsilon
+            float cellSize = 1.0f;
+            if (scalarField.Length > 1)
+            {
+                float3 origin = scalarField[0].Position;
+                for (int i = 1; i < scalarField.Length; i++)
+                {
+                    float dist = math.distance(origin, scalarField[i].Position);
+                    if (dist > 0.0001f)
+                    {
+                        cellSize = dist;
+                        break;
+                    }
+                }
+            }
+            
+            // Utiliser un epsilon proportionnel à la taille de cellule
+            float epsilon = cellSize * 0.1f;
             
             // Gradient en X
             float valueXPlus = SampleScalarField(scalarField, position + new float3(epsilon, 0, 0));
@@ -438,22 +455,82 @@ using Unity.Mathematics;
         /// </summary>
         private float SampleScalarField(DynamicBuffer<ScalarFieldValue> scalarField, float3 position)
         {
-            // Trouver le point le plus proche dans le champ scalaire
-            // Pour simplifier, on utilise le nearest neighbor
-            float minDist = float.MaxValue;
-            float value = 0;
+            // Trouver la cellule qui contient la position
+            // On suppose que la grille commence à l'origine du premier point
+            if (scalarField.Length == 0)
+                return 0;
             
-            for (int i = 0; i < scalarField.Length; i++)
+            float3 origin = scalarField[0].Position;
+            
+            // Calculer la taille de cellule (distance entre deux points adjacents)
+            float cellSize = 1.0f;
+            if (scalarField.Length > 1)
             {
-                float dist = math.distance(scalarField[i].Position, position);
-                if (dist < minDist)
+                // Trouver le premier voisin différent
+                for (int i = 1; i < scalarField.Length; i++)
                 {
-                    minDist = dist;
-                    value = scalarField[i].Value;
+                    float dist = math.distance(origin, scalarField[i].Position);
+                    if (dist > 0.0001f)
+                    {
+                        cellSize = dist;
+                        break;
+                    }
                 }
             }
             
-            return value;
+            // Convertir la position en coordonnées de grille (flottantes)
+            float3 gridPos = (position - origin) / cellSize;
+            
+            // Trouver la cellule de base (coin inférieur)
+            int3 baseCell = new int3(
+                (int)math.floor(gridPos.x),
+                (int)math.floor(gridPos.y),
+                (int)math.floor(gridPos.z)
+            );
+            
+            // Coordonnées locales dans la cellule (0-1)
+            float3 t = gridPos - new float3(baseCell);
+            
+            // Clamp pour éviter les dépassements
+            baseCell = math.clamp(baseCell, int3.zero, ScalarFieldUtility.DefaultGridSize - new int3(2, 2, 2));
+            t = math.clamp(t, 0.0f, 1.0f);
+            
+            // Interpolation trilinéaire
+            // Récupérer les 8 valeurs aux coins de la cellule
+            float v000 = GetScalarValueAtCoord(scalarField, baseCell + new int3(0, 0, 0));
+            float v100 = GetScalarValueAtCoord(scalarField, baseCell + new int3(1, 0, 0));
+            float v010 = GetScalarValueAtCoord(scalarField, baseCell + new int3(0, 1, 0));
+            float v110 = GetScalarValueAtCoord(scalarField, baseCell + new int3(1, 1, 0));
+            float v001 = GetScalarValueAtCoord(scalarField, baseCell + new int3(0, 0, 1));
+            float v101 = GetScalarValueAtCoord(scalarField, baseCell + new int3(1, 0, 1));
+            float v011 = GetScalarValueAtCoord(scalarField, baseCell + new int3(0, 1, 1));
+            float v111 = GetScalarValueAtCoord(scalarField, baseCell + new int3(1, 1, 1));
+            
+            // Interpolation selon X
+            float v00 = math.lerp(v000, v100, t.x);
+            float v01 = math.lerp(v001, v101, t.x);
+            float v10 = math.lerp(v010, v110, t.x);
+            float v11 = math.lerp(v011, v111, t.x);
+            
+            // Interpolation selon Y
+            float v0 = math.lerp(v00, v10, t.y);
+            float v1 = math.lerp(v01, v11, t.y);
+            
+            // Interpolation selon Z
+            return math.lerp(v0, v1, t.z);
+        }
+        
+        /// <summary>
+        ///     Récupère la valeur scalaire à une coordonnée de grille donnée
+        /// </summary>
+        private float GetScalarValueAtCoord(DynamicBuffer<ScalarFieldValue> scalarField, int3 coord)
+        {
+            int index = ScalarFieldUtility.CoordToIndex(coord, ScalarFieldUtility.DefaultGridSize);
+            if (index >= 0 && index < scalarField.Length)
+            {
+                return scalarField[index].Value;
+            }
+            return 0;
         }
     }
 
