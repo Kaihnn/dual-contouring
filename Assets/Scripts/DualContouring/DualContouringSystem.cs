@@ -3,8 +3,9 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
-
-/// <summary>
+namespace DualContouring
+{
+    /// <summary>
     ///     Système qui remplit le buffer DualContouringCell à partir du ScalarField
     /// </summary>
     [BurstCompile]
@@ -569,4 +570,5 @@ using Unity.Mathematics;
             return 0;
         }
     }
+}
 
