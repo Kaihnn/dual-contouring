@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -55,6 +56,15 @@ public class ScalarFieldAuthoring : MonoBehaviour
 
                     Gizmos.color = color;
                     Gizmos.DrawSphere(position, GizmoSize);
+
+                    // Afficher l'index en texte
+#if UNITY_EDITOR
+                    // Calculer un offset qui s'adapte à la distance de la caméra
+                    Vector3 worldPos = position;
+                    Vector3 offset = Vector3.up * (HandleUtility.GetHandleSize(worldPos) * 0.3f);
+                    Handles.Label(worldPos + offset, index.ToString());
+#endif
+
                     index++;
                 }
             }
