@@ -21,9 +21,9 @@ namespace DualContouring.Editor
         private Dictionary<Entity, Button> _entityButtons = new Dictionary<Entity, Button>();
         private VisualElement _selectedPanel;
         private Label _selectedTitleLabel;
-        private IntegerField _selectedCellXField;
-        private IntegerField _selectedCellYField;
-        private IntegerField _selectedCellZField;
+        private SliderInt _selectedCellXField;
+        private SliderInt _selectedCellYField;
+        private SliderInt _selectedCellZField;
 
         public override VisualElement CreatePanelContent()
         {
@@ -90,50 +90,55 @@ namespace DualContouring.Editor
             _selectedPanel.Add(cellLabel);
 
             var cellContainer = new VisualElement();
-            cellContainer.style.flexDirection = FlexDirection.Row;
+            cellContainer.style.flexDirection = FlexDirection.Column;
             cellContainer.style.marginBottom = 3;
-            cellContainer.style.justifyContent = Justify.SpaceBetween;
 
-            // Label pour X
+            // Slider pour X
             var xContainer = new VisualElement();
-            xContainer.style.flexDirection = FlexDirection.Column;
-            xContainer.style.flexGrow = 1;
-            xContainer.style.marginRight = 3;
-            var xLabel = new Label("X");
-            xLabel.style.fontSize = 9;
+            xContainer.style.flexDirection = FlexDirection.Row;
+            xContainer.style.marginBottom = 2;
+            var xLabel = new Label("X:");
+            xLabel.style.fontSize = 10;
             xLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
-            xLabel.style.marginBottom = 1;
+            xLabel.style.width = 15;
+            xLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
             xContainer.Add(xLabel);
-            _selectedCellXField = new IntegerField();
+            _selectedCellXField = new SliderInt(0, 10);
+            _selectedCellXField.style.flexGrow = 1;
+            _selectedCellXField.showInputField = true;
             _selectedCellXField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
             xContainer.Add(_selectedCellXField);
             cellContainer.Add(xContainer);
 
-            // Label pour Y
+            // Slider pour Y
             var yContainer = new VisualElement();
-            yContainer.style.flexDirection = FlexDirection.Column;
-            yContainer.style.flexGrow = 1;
-            yContainer.style.marginRight = 3;
-            var yLabel = new Label("Y");
-            yLabel.style.fontSize = 9;
+            yContainer.style.flexDirection = FlexDirection.Row;
+            yContainer.style.marginBottom = 2;
+            var yLabel = new Label("Y:");
+            yLabel.style.fontSize = 10;
             yLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
-            yLabel.style.marginBottom = 1;
+            yLabel.style.width = 15;
+            yLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
             yContainer.Add(yLabel);
-            _selectedCellYField = new IntegerField();
+            _selectedCellYField = new SliderInt(0, 10);
+            _selectedCellYField.style.flexGrow = 1;
+            _selectedCellYField.showInputField = true;
             _selectedCellYField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
             yContainer.Add(_selectedCellYField);
             cellContainer.Add(yContainer);
 
-            // Label pour Z
+            // Slider pour Z
             var zContainer = new VisualElement();
-            zContainer.style.flexDirection = FlexDirection.Column;
-            zContainer.style.flexGrow = 1;
-            var zLabel = new Label("Z");
-            zLabel.style.fontSize = 9;
+            zContainer.style.flexDirection = FlexDirection.Row;
+            var zLabel = new Label("Z:");
+            zLabel.style.fontSize = 10;
             zLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
-            zLabel.style.marginBottom = 1;
+            zLabel.style.width = 15;
+            zLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
             zContainer.Add(zLabel);
-            _selectedCellZField = new IntegerField();
+            _selectedCellZField = new SliderInt(0, 10);
+            _selectedCellZField.style.flexGrow = 1;
+            _selectedCellZField.showInputField = true;
             _selectedCellZField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
             zContainer.Add(_selectedCellZField);
             cellContainer.Add(zContainer);
@@ -290,6 +295,22 @@ namespace DualContouring.Editor
 
             // Mettre à jour le titre
             _selectedTitleLabel.text = $"Selected: Scalar Field {selectedEntity.Index}";
+
+            // Récupérer la GridSize pour mettre à jour les limites des sliders
+            if (entityManager.HasComponent<ScalarFieldGridSize>(selectedEntity))
+            {
+                var gridSize = entityManager.GetComponentData<ScalarFieldGridSize>(selectedEntity);
+                
+                // Mettre à jour les limites des sliders (0 à GridSize - 1)
+                _selectedCellXField.lowValue = 0;
+                _selectedCellXField.highValue = Mathf.Max(0, gridSize.Value.x - 1);
+                
+                _selectedCellYField.lowValue = 0;
+                _selectedCellYField.highValue = Mathf.Max(0, gridSize.Value.y - 1);
+                
+                _selectedCellZField.lowValue = 0;
+                _selectedCellZField.highValue = Mathf.Max(0, gridSize.Value.z - 1);
+            }
 
             // Récupérer et afficher la Selected Cell
             if (entityManager.HasComponent<SelectedCell>(selectedEntity))

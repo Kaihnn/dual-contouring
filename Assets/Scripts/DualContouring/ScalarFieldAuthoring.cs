@@ -39,7 +39,7 @@ namespace DualContouring
                 AddComponent(entity,
                     new SelectedCell
                     {
-                        Value = 0
+                        Value = int3.zero
                     });
                 AddComponent(entity,
                     new ScalarFieldGridSize
