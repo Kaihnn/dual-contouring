@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-public struct ScalarFieldValue : IBufferElementData
+public struct ScalarFieldItem : IBufferElementData
 {
     public float Value;
     public float3 Position;

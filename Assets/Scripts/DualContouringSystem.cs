@@ -13,14 +13,14 @@ using Unity.Mathematics;
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<ScalarFieldValue>();
+            state.RequireForUpdate<ScalarFieldItem>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             foreach (var (scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, gridSize) in SystemAPI.Query<
-                         DynamicBuffer<ScalarFieldValue>,
+                         DynamicBuffer<ScalarFieldItem>,
                          DynamicBuffer<DualContouringCell>,
                          DynamicBuffer<DualContouringEdgeIntersection>,
                          RefRO<ScalarFieldGridSize>>())
@@ -49,7 +49,7 @@ using Unity.Mathematics;
         ///     Traite une cellule du dual contouring
         /// </summary>
         private void ProcessCell(
-            DynamicBuffer<ScalarFieldValue> scalarField,
+            DynamicBuffer<ScalarFieldItem> scalarField,
             DynamicBuffer<DualContouringCell> cells,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             int3 cellIndex,
@@ -77,7 +77,7 @@ using Unity.Mathematics;
 
                 if (scalarIndex >= 0 && scalarIndex < scalarField.Length)
                 {
-                    ScalarFieldValue value = scalarField[scalarIndex];
+                    ScalarFieldItem value = scalarField[scalarIndex];
 
                     if (firstCorner)
                     {
@@ -130,7 +130,7 @@ using Unity.Mathematics;
         ///     et la normale de la cellule (somme des normales des arêtes, normalisée et inversée)
         /// </summary>
         private void CalculateVertexPositionAndNormal(
-            DynamicBuffer<ScalarFieldValue> scalarField,
+            DynamicBuffer<ScalarFieldItem> scalarField,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             int3 cellIndex,
             float cellSize,
@@ -393,7 +393,7 @@ using Unity.Mathematics;
         ///     Essaie de trouver l'intersection entre une arête et la surface (iso-surface à 0)
         /// </summary>
         private bool TryGetEdgeIntersection(
-            DynamicBuffer<ScalarFieldValue> scalarField,
+            DynamicBuffer<ScalarFieldItem> scalarField,
             int3 corner1Index,
             int3 corner2Index,
             out float3 intersection,
@@ -411,8 +411,8 @@ using Unity.Mathematics;
                 return false;
             }
 
-            ScalarFieldValue v1 = scalarField[idx1];
-            ScalarFieldValue v2 = scalarField[idx2];
+            ScalarFieldItem v1 = scalarField[idx1];
+            ScalarFieldItem v2 = scalarField[idx2];
 
             // Vérifier si l'arête traverse la surface (changement de signe)
             if ((v1.Value < 0 && v2.Value >= 0) || (v1.Value >= 0 && v2.Value < 0))
@@ -433,7 +433,7 @@ using Unity.Mathematics;
         /// <summary>
         ///     Calcule la normale au point d'intersection en utilisant le gradient du champ scalaire
         /// </summary>
-        private float3 CalculateNormal(DynamicBuffer<ScalarFieldValue> scalarField, float3 position, int3 gridSize)
+        private float3 CalculateNormal(DynamicBuffer<ScalarFieldItem> scalarField, float3 position, int3 gridSize)
         {
             // Pour calculer la normale, on utilise le gradient du champ scalaire
             // La normale est le gradient normalisé
@@ -489,7 +489,7 @@ using Unity.Mathematics;
         /// <summary>
         ///     Échantillonne le champ scalaire à une position donnée (interpolation trilinéaire)
         /// </summary>
-        private float SampleScalarField(DynamicBuffer<ScalarFieldValue> scalarField, float3 position, int3 gridSize)
+        private float SampleScalarField(DynamicBuffer<ScalarFieldItem> scalarField, float3 position, int3 gridSize)
         {
             // Trouver la cellule qui contient la position
             // On suppose que la grille commence à l'origine du premier point
@@ -559,7 +559,7 @@ using Unity.Mathematics;
         /// <summary>
         ///     Récupère la valeur scalaire à une coordonnée de grille donnée
         /// </summary>
-        private float GetScalarValueAtCoord(DynamicBuffer<ScalarFieldValue> scalarField, int3 coord, int3 gridSize)
+        private float GetScalarValueAtCoord(DynamicBuffer<ScalarFieldItem> scalarField, int3 coord, int3 gridSize)
         {
             int index = ScalarFieldUtility.CoordToIndex(coord, gridSize);
             if (index >= 0 && index < scalarField.Length)

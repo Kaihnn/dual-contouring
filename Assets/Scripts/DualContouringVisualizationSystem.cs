@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEngine;
 
 /// <summary>
@@ -14,11 +15,12 @@ public partial class DualContouringVisualizationSystem : SystemBase
 
         public void DrawGizmos()
         {
-            foreach (var (cellBuffer, edgeIntersectionBuffer, selectedCell, gridSize) in SystemAPI.Query<
+            foreach (var (cellBuffer, edgeIntersectionBuffer, selectedCell, gridSize, localToWorld) in SystemAPI.Query<
                          DynamicBuffer<DualContouringCell>,
                          DynamicBuffer<DualContouringEdgeIntersection>,
                          RefRO<SelectedCell>,
-                         RefRO<ScalarFieldGridSize>>())
+                         RefRO<ScalarFieldGridSize>,
+                         RefRO<LocalToWorld>>())
             {
                 // Calculer l'index de la cellule sélectionnée
                 int3 cellGridSize = gridSize.ValueRO.Value - new int3(1, 1, 1);
@@ -30,18 +32,18 @@ public partial class DualContouringVisualizationSystem : SystemBase
                 if (drawAllCells)
                 {
                     // Dessiner toutes les cellules
-                    DrawAllCells(cellBuffer);
+                    DrawAllCells(cellBuffer, localToWorld.ValueRO);
                     
                     // Dessiner toutes les intersections d'arêtes
-                    DrawAllEdgeIntersections(edgeIntersectionBuffer);
+                    DrawAllEdgeIntersections(edgeIntersectionBuffer, localToWorld.ValueRO);
                 }
                 else
                 {
                     // Dessiner uniquement la cellule sélectionnée
-                    DrawCell(cellBuffer[selectedIndex]);
+                    DrawCell(cellBuffer[selectedIndex], localToWorld.ValueRO);
                     
                     // Dessiner les intersections d'arêtes pour la cellule sélectionnée uniquement
-                    DrawEdgeIntersectionsForCell(edgeIntersectionBuffer, selectedIndex);
+                    DrawEdgeIntersectionsForCell(edgeIntersectionBuffer, selectedIndex, localToWorld.ValueRO);
                 }
             }
         }
@@ -51,69 +53,77 @@ public partial class DualContouringVisualizationSystem : SystemBase
         Gizmos.DrawWireCube(center, size);
     }
 
-    private void DrawAllCells(DynamicBuffer<DualContouringCell> cellBuffer)
+    private void DrawAllCells(DynamicBuffer<DualContouringCell> cellBuffer, LocalToWorld localToWorld)
     {
         foreach (var cell in cellBuffer)
         {
-            DrawCell(cell);
+            DrawCell(cell, localToWorld);
         }
     }
 
-    private void DrawCell(DualContouringCell cell)
+    private void DrawCell(DualContouringCell cell, LocalToWorld localToWorld)
     {
         if (cell.HasVertex)
         {
+            // Appliquer le transform à toutes les positions
+            float3 cellCenter = math.transform(localToWorld.Value, cell.Position + new float3(0.5f, 0.5f, 0.5f) * cell.Size);
+            float3 vertexPosition = math.transform(localToWorld.Value, cell.VertexPosition);
+            
             // Dessiner la cellule en vert si elle a un vertex
             Gizmos.color = Color.green;
-            DrawWireCube(cell.Position + new float3(0.5f, 0.5f, 0.5f) * cell.Size, 
-                new float3(cell.Size, cell.Size, cell.Size));
+            DrawWireCube(cellCenter, new float3(cell.Size, cell.Size, cell.Size));
 
             // Dessiner le vertex en jaune
             Gizmos.color = Color.yellow;
-            Gizmos.DrawSphere(cell.VertexPosition, cell.Size * 0.1f);
+            Gizmos.DrawSphere(vertexPosition, cell.Size * 0.1f);
             
             // Dessiner la normale de la cellule en magenta
             Gizmos.color = Color.magenta;
-            Gizmos.DrawLine(cell.VertexPosition, 
-                cell.VertexPosition + cell.Normal * cell.Size * 0.5f);
+            Gizmos.DrawLine(vertexPosition, 
+                vertexPosition + cell.Normal * cell.Size * 0.5f);
         }
         else
         {
+            // Appliquer le transform
+            float3 cellCenter = math.transform(localToWorld.Value, cell.Position + new float3(0.5f, 0.5f, 0.5f) * cell.Size);
+            
             // Dessiner la cellule en gris si elle n'a pas de vertex
             Gizmos.color = new Color(0.5f, 0.5f, 0.5f, 0.3f);
-            DrawWireCube(cell.Position + new float3(0.5f, 0.5f, 0.5f) * cell.Size, 
-                new float3(cell.Size, cell.Size, cell.Size));
+            DrawWireCube(cellCenter, new float3(cell.Size, cell.Size, cell.Size));
         }
     }
 
-    private void DrawAllEdgeIntersections(DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer)
+    private void DrawAllEdgeIntersections(DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer, LocalToWorld localToWorld)
     {
         foreach (var edgeIntersection in edgeIntersectionBuffer)
         {
-            DrawEdgeIntersection(edgeIntersection);
+            DrawEdgeIntersection(edgeIntersection, localToWorld);
         }
     }
 
-    private void DrawEdgeIntersectionsForCell(DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer, int cellIndex)
+    private void DrawEdgeIntersectionsForCell(DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer, int cellIndex, LocalToWorld localToWorld)
     {
         foreach (var edgeIntersection in edgeIntersectionBuffer)
         {
             if (edgeIntersection.CellIndex == cellIndex)
             {
-                DrawEdgeIntersection(edgeIntersection);
+                DrawEdgeIntersection(edgeIntersection, localToWorld);
             }
         }
     }
 
-    private void DrawEdgeIntersection(DualContouringEdgeIntersection edgeIntersection)
+    private void DrawEdgeIntersection(DualContouringEdgeIntersection edgeIntersection, LocalToWorld localToWorld)
     {
+        // Appliquer le transform à la position
+        float3 position = math.transform(localToWorld.Value, edgeIntersection.Position);
+        
         // Dessiner le point d'intersection en rouge
         Gizmos.color = Color.red;
-        Gizmos.DrawSphere(edgeIntersection.Position, 0.05f);
+        Gizmos.DrawSphere(position, 0.05f);
         
         // Dessiner la normale en cyan
         Gizmos.color = Color.cyan;
-        Gizmos.DrawLine(edgeIntersection.Position, 
-            edgeIntersection.Position + edgeIntersection.Normal * 0.2f);
+        Gizmos.DrawLine(position, 
+            position + edgeIntersection.Normal * 0.2f);
     }
 }

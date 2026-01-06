@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Transforms;
 using UnityEngine;
 
 /// <summary>
@@ -39,14 +40,15 @@ public partial class DualContouringMeshRenderSystem : SystemBase
         var materialRef = SystemAPI.GetSingleton<DualContouringMaterialReference>();
         
         // Mettre à jour le mesh avec les données générées
-        foreach (var (vertexBuffer, triangleBuffer) in SystemAPI.Query<
+        foreach (var (vertexBuffer, triangleBuffer, localToWorld) in SystemAPI.Query<
                      DynamicBuffer<DualContouringMeshVertex>,
-                     DynamicBuffer<DualContouringMeshTriangle>>())
+                     DynamicBuffer<DualContouringMeshTriangle>,
+                     RefRO<LocalToWorld>>())
         {
             UpdateMesh(vertexBuffer, triangleBuffer);
             
-            // Dessiner le mesh avec le matériau du singleton
-            Graphics.DrawMesh(_mesh, Matrix4x4.identity, materialRef.Material, 0);
+            // Dessiner le mesh avec le matériau du singleton et la transformation de l'entité
+            Graphics.DrawMesh(_mesh, localToWorld.ValueRO.Value, materialRef.Material, 0);
         }
     }
 

@@ -36,7 +36,7 @@ public class ScalarFieldAuthoring : MonoBehaviour
     {
         public override void Bake(ScalarFieldAuthoring authoring)
         {
-            Entity entity = GetEntity(TransformUsageFlags.None);
+            Entity entity = GetEntity(TransformUsageFlags.Dynamic);
             AddComponent(entity,
                 new SelectedCell
                 {
@@ -53,7 +53,7 @@ public class ScalarFieldAuthoring : MonoBehaviour
             AddBuffer<DualContouringEdgeIntersection>(entity);
             AddBuffer<DualContouringMeshVertex>(entity);
             AddBuffer<DualContouringMeshTriangle>(entity);
-            DynamicBuffer<ScalarFieldValue> buffer = AddBuffer<ScalarFieldValue>(entity);
+            DynamicBuffer<ScalarFieldItem> buffer = AddBuffer<ScalarFieldItem>(entity);
 
             // Générer les valeurs scalaires selon le type
             int index = 0;
@@ -65,7 +65,7 @@ public class ScalarFieldAuthoring : MonoBehaviour
                     {
                         float3 position = authoring.Origin + new float3(x, y, z) * authoring.CellSize;
                         float value = authoring.Values != null && index < authoring.Values.Length ? authoring.Values[index] : 0f;
-                        buffer.Add(new ScalarFieldValue { Position = position, Value = value });
+                        buffer.Add(new ScalarFieldItem { Position = position, Value = value });
                         index++;
                     }
                 }

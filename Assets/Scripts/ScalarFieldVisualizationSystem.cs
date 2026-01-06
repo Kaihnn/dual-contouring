@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 using UnityEditor;
 using UnityEngine;
 
@@ -15,15 +16,16 @@ public partial class ScalarFieldVisualizationSystem : SystemBase
 
     public void DrawGizmos()
     {
-        foreach (var (scalarFieldBuffer, gridSize) in SystemAPI.Query<
-                     DynamicBuffer<ScalarFieldValue>,
-                     RefRO<ScalarFieldGridSize>>())
+        foreach (var (scalarFieldBuffer, gridSize, localToWorld) in SystemAPI.Query<
+                     DynamicBuffer<ScalarFieldItem>,
+                     RefRO<ScalarFieldGridSize>,
+                     RefRO<LocalToWorld>>())
         {
-            DrawScalarFieldValues(scalarFieldBuffer, gridSize.ValueRO);
+            DrawScalarFieldValues(scalarFieldBuffer, gridSize.ValueRO, localToWorld.ValueRO);
         }
     }
 
-    private void DrawScalarFieldValues(DynamicBuffer<ScalarFieldValue> scalarFieldBuffer, ScalarFieldGridSize gridSize)
+    private void DrawScalarFieldValues(DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, ScalarFieldGridSize gridSize, LocalToWorld localToWorld)
     {
         int index = 0;
         for (int y = 0; y < gridSize.Value.y; y++)
@@ -38,7 +40,7 @@ public partial class ScalarFieldVisualizationSystem : SystemBase
                     }
 
                     var scalarValue = scalarFieldBuffer[index];
-                    float3 position = scalarValue.Position;
+                    float3 position = math.transform(localToWorld.Value, scalarValue.Position);
                     float value = scalarValue.Value;
 
                     // < 0 = noir, 0 = rouge, sbyte.MaxValue (127) = vert
