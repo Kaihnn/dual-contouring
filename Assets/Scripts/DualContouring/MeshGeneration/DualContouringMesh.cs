@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace DualContouring
+namespace DualContouring.MeshGeneration
 {
     /// <summary>
     ///     Composant qui contient les données de vertex pour le mesh généré

@@ -1,3 +1,5 @@
+using DualContouring.DualContouring;
+using DualContouring.ScalarField;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;

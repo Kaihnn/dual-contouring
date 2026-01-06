@@ -1,9 +1,10 @@
+using DualContouring.ScalarField;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace DualContouring
+namespace DualContouring.DualContouring
 {
     /// <summary>
     ///     Système qui remplit le buffer DualContouringCell à partir du ScalarField

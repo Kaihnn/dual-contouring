@@ -2,7 +2,7 @@ using Unity.Entities;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace DualContouring
+namespace DualContouring.MeshGeneration
 {
     /// <summary>
     ///     Système qui rend le mesh généré par le dual contouring

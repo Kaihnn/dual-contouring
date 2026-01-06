@@ -1,9 +1,11 @@
+using DualContouring.DualContouring;
+using DualContouring.ScalarField;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace DualContouring
+namespace DualContouring.MeshGeneration
 {
     /// <summary>
     ///     Système qui génère un mesh à partir des cellules de dual contouring

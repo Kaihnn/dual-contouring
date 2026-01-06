@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-namespace DualContouring
+namespace DualContouring.ScalarField
 {
     /// <summary>
     ///     Utilitaires pour manipuler le champ scalaire

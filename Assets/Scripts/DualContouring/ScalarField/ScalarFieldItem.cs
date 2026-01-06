@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace DualContouring
+namespace DualContouring.ScalarField
 {
     public struct ScalarFieldItem : IBufferElementData
     {

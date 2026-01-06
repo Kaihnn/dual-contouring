@@ -2,12 +2,12 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 
-namespace DualContouring
+namespace DualContouring.ScalarField
 {
     /// <summary>
     ///     Exemple de configuration pour tester le dual contouring avec génération de mesh
     /// </summary>
-    public class DualContouringExample : MonoBehaviour
+    public class ScalarFieldExample : MonoBehaviour
     {
         public enum ExampleType
         {

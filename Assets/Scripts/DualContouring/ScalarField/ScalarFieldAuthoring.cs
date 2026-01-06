@@ -1,10 +1,12 @@
 using DualContouring.Debugs;
+using DualContouring.DualContouring;
+using DualContouring.MeshGeneration;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace DualContouring
+namespace DualContouring.ScalarField
 {
     /// <summary>
     ///     Baker pour créer une entité avec un champ scalaire

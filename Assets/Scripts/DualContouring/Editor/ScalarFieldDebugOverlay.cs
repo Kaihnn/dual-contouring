@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using DualContouring.Debugs;
+using DualContouring.ScalarField;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEditor;

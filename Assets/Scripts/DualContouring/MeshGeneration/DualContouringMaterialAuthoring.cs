@@ -1,7 +1,7 @@
 using Unity.Entities;
 using UnityEngine;
 
-namespace DualContouring
+namespace DualContouring.MeshGeneration
 {
     public class DualContouringMaterialAuthoring : MonoBehaviour
     {
