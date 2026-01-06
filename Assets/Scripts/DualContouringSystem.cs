@@ -1,6 +1,8 @@
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+
 
 /// <summary>
     ///     Système qui remplit le buffer DualContouringCell à partir du ScalarField
@@ -134,9 +136,10 @@ using Unity.Mathematics;
             int3 cellGridSize = gridSize - new int3(1, 1, 1);
             int currentCellIndex = ScalarFieldUtility.CoordToIndex(cellIndex, cellGridSize);
             
-            // Structures pour stocker les intersections temporaires
-            float3[] positions = new float3[12];
-            float3[] normals = new float3[12];
+            // Utiliser NativeArray alloué sur la stack pour éviter les allocations managées dans Burst
+            // Max 12 arêtes par cellule
+            var positions = new NativeArray<float3>(12, Allocator.Temp);
+            var normals = new NativeArray<float3>(12, Allocator.Temp);
             int count = 0;
             float3 massPoint = float3.zero; // Centre de masse des intersections
 
@@ -226,8 +229,16 @@ using Unity.Mathematics;
                     vertexPos = math.clamp(vertexPos, cellMin, cellMax);
                 }
                 
+                // Nettoyer les NativeArray
+                positions.Dispose();
+                normals.Dispose();
+                
                 return vertexPos;
             }
+
+            // Nettoyer les NativeArray même si count == 0
+            positions.Dispose();
+            normals.Dispose();
 
             // Fallback: centre de la cellule
             int fallbackIndex = ScalarFieldUtility.CoordToIndex(cellIndex, gridSize);
@@ -243,7 +254,7 @@ using Unity.Mathematics;
         ///     Résout le QEF (Quadratic Error Function) pour trouver la position optimale du vertex
         ///     Minimise la somme des carrés des distances aux plans tangents
         /// </summary>
-        private float3 SolveQef(float3[] positions, float3[] normals, int count, float3 massPoint)
+        private float3 SolveQef(NativeArray<float3> positions, NativeArray<float3> normals, int count, float3 massPoint)
         {
             // On résout le système A^T * A * x = A^T * b
             // où A est la matrice des normales et b est le vecteur des distances signées
