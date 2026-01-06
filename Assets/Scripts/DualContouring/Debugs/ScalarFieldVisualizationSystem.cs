@@ -4,7 +4,7 @@ using Unity.Transforms;
 using UnityEditor;
 using UnityEngine;
 
-namespace DualContouring
+namespace DualContouring.Debugs
 {
     /// <summary>
     ///     Système de visualisation des valeurs du champ scalaire dans l'éditeur

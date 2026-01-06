@@ -3,7 +3,7 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace DualContouring
+namespace DualContouring.Debugs
 {
     /// <summary>
     ///     Système de visualisation des cellules de dual contouring dans l'éditeur

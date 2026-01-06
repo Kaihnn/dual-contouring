@@ -1,3 +1,4 @@
+using DualContouring.Debugs;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -23,7 +24,7 @@ namespace DualContouring
             // Visualiser les valeurs du champ scalaire et les cellules pendant le jeu
             if (Application.isPlaying && World.DefaultGameObjectInjectionWorld != null)
             {
-                var scalarFieldVisualizationSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<ScalarFieldVisualizationSystem>();
+                var scalarFieldVisualizationSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<Debugs.ScalarFieldVisualizationSystem>();
                 scalarFieldVisualizationSystem?.DrawGizmos();
 
                 var dualContouringVisualizationSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<DualContouringVisualizationSystem>();
