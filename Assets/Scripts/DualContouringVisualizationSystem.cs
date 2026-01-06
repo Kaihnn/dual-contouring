@@ -71,6 +71,11 @@ public partial class DualContouringVisualizationSystem : SystemBase
             // Dessiner le vertex en jaune
             Gizmos.color = Color.yellow;
             Gizmos.DrawSphere(cell.VertexPosition, cell.Size * 0.1f);
+            
+            // Dessiner la normale de la cellule en magenta
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawLine(cell.VertexPosition, 
+                cell.VertexPosition + cell.Normal * cell.Size * 0.5f);
         }
         else
         {

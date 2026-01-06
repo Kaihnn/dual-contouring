@@ -7,4 +7,5 @@ public struct DualContouringCell : IBufferElementData
     public float Size;
     public bool HasVertex;
     public float3 VertexPosition;
+    public float3 Normal;
 }

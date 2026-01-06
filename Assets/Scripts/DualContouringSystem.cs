@@ -105,11 +105,13 @@ using Unity.Mathematics;
             // Dans un vrai dual contouring, on utiliserait QEF (Quadratic Error Function)
             float3 cellPosition = corner0Pos;
             float3 vertexPosition = cellPosition + new float3(0.5f, 0.5f, 0.5f) * cellSize;
+            float3 cellNormal = new float3(0, 1, 0);
 
-            // Si on a une intersection, calculer une meilleure position du vertex
+            // Si on a une intersection, calculer une meilleure position du vertex et la normale
             if (hasVertex)
             {
-                vertexPosition = CalculateVertexPosition(scalarField, edgeIntersections, cellIndex, cellSize, gridSize);
+                CalculateVertexPositionAndNormal(scalarField, edgeIntersections, cellIndex, cellSize, gridSize, 
+                    out vertexPosition, out cellNormal);
             }
 
             // Ajouter la cellule au buffer
@@ -118,20 +120,28 @@ using Unity.Mathematics;
                 Position = cellPosition,
                 Size = cellSize,
                 HasVertex = hasVertex,
-                VertexPosition = vertexPosition
+                VertexPosition = vertexPosition,
+                Normal = cellNormal
             });
         }
 
         /// <summary>
         ///     Calcule la position du vertex dans une cellule en utilisant QEF (Quadratic Error Function)
+        ///     et la normale de la cellule (somme des normales des arêtes, normalisée et inversée)
         /// </summary>
-        private float3 CalculateVertexPosition(
+        private void CalculateVertexPositionAndNormal(
             DynamicBuffer<ScalarFieldValue> scalarField,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             int3 cellIndex,
             float cellSize,
-            int3 gridSize)
+            int3 gridSize,
+            out float3 vertexPosition,
+            out float3 cellNormal)
         {
+            // Valeurs par défaut
+            vertexPosition = float3.zero;
+            cellNormal = new float3(0, 1, 0);
+            
             // Collecter toutes les intersections et normales
             int3 cellGridSize = gridSize - new int3(1, 1, 1);
             int currentCellIndex = ScalarFieldUtility.CoordToIndex(cellIndex, cellGridSize);
@@ -142,6 +152,7 @@ using Unity.Mathematics;
             var normals = new NativeArray<float3>(12, Allocator.Temp);
             int count = 0;
             float3 massPoint = float3.zero; // Centre de masse des intersections
+            float3 normalSum = float3.zero; // Somme des normales
 
             // Parcourir les 12 arêtes de la cellule
             // Arêtes parallèles à X (4)
@@ -155,6 +166,7 @@ using Unity.Mathematics;
                         positions[count] = intersection;
                         normals[count] = normal;
                         massPoint += intersection;
+                        normalSum += normal;
                         count++;
                         
                         edgeIntersections.Add(new DualContouringEdgeIntersection
@@ -178,6 +190,7 @@ using Unity.Mathematics;
                         positions[count] = intersection;
                         normals[count] = normal;
                         massPoint += intersection;
+                        normalSum += normal;
                         count++;
                         
                         edgeIntersections.Add(new DualContouringEdgeIntersection
@@ -201,6 +214,7 @@ using Unity.Mathematics;
                         positions[count] = intersection;
                         normals[count] = normal;
                         massPoint += intersection;
+                        normalSum += normal;
                         count++;
                         
                         edgeIntersections.Add(new DualContouringEdgeIntersection
@@ -217,6 +231,13 @@ using Unity.Mathematics;
             {
                 massPoint /= count;
                 
+                // Calculer la normale de la cellule : somme des normales, normalisée et inversée
+                float normalLength = math.length(normalSum);
+                if (normalLength > 0.0001f)
+                {
+                    cellNormal = -math.normalize(normalSum); // Normaliser et inverser
+                }
+                
                 // Utiliser QEF pour trouver la meilleure position
                 float3 vertexPos = SolveQef(positions, normals, count, massPoint);
                 
@@ -229,11 +250,13 @@ using Unity.Mathematics;
                     vertexPos = math.clamp(vertexPos, cellMin, cellMax);
                 }
                 
+                vertexPosition = vertexPos;
+                
                 // Nettoyer les NativeArray
                 positions.Dispose();
                 normals.Dispose();
                 
-                return vertexPos;
+                return;
             }
 
             // Nettoyer les NativeArray même si count == 0
@@ -244,10 +267,8 @@ using Unity.Mathematics;
             int fallbackIndex = ScalarFieldUtility.CoordToIndex(cellIndex, gridSize);
             if (fallbackIndex >= 0 && fallbackIndex < scalarField.Length)
             {
-                return scalarField[fallbackIndex].Position + new float3(0.5f, 0.5f, 0.5f) * cellSize;
+                vertexPosition = scalarField[fallbackIndex].Position + new float3(0.5f, 0.5f, 0.5f) * cellSize;
             }
-
-            return float3.zero;
         }
         
         /// <summary>
