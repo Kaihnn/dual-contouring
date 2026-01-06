@@ -119,6 +119,237 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &296549103
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 296549106}
+  - component: {fileID: 296549105}
+  - component: {fileID: 296549104}
+  m_Layer: 0
+  m_Name: ScalarField
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &296549104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 296549103}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee8ca4038b5402e87efed7e957de142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringExample
+  instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
+    un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
+    ci-dessous."
+  minValue: -3
+  maxValue: 3
+  sphereRadius: 0.236
+--- !u!114 &296549105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 296549103}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5577b517f5bc427d9ae68a61d6e31eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouring.ScalarFieldAuthoring
+  Origin:
+    x: 0
+    y: 0
+    z: 0
+  CellSize: 1
+  GridSize:
+    x: 6
+    y: 6
+    z: 6
+  Values: 030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303010101010101010101010101010101010101010101010101010101010101010101010101fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
+  SelectedCell:
+    x: -61
+    y: 3
+    z: 3
+--- !u!4 &296549106
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 296549103}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &446521545
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 446521548}
+  - component: {fileID: 446521547}
+  - component: {fileID: 446521546}
+  m_Layer: 0
+  m_Name: ScalarField
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &446521546
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 446521545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee8ca4038b5402e87efed7e957de142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringExample
+  instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
+    un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
+    ci-dessous."
+  minValue: -3
+  maxValue: 3
+  sphereRadius: 0.236
+--- !u!114 &446521547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 446521545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5577b517f5bc427d9ae68a61d6e31eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouring.ScalarFieldAuthoring
+  Origin:
+    x: 0
+    y: 0
+    z: 0
+  CellSize: 1
+  GridSize:
+    x: 6
+    y: 6
+    z: 6
+  Values: 030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303010101010101010101010101010101010101010101010101010101010101010101010101fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
+  SelectedCell:
+    x: -61
+    y: 3
+    z: 3
+--- !u!4 &446521548
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 446521545}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1031328395
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1031328398}
+  - component: {fileID: 1031328397}
+  - component: {fileID: 1031328396}
+  m_Layer: 0
+  m_Name: ScalarField
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1031328396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1031328395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee8ca4038b5402e87efed7e957de142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringExample
+  instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
+    un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
+    ci-dessous."
+  minValue: -3
+  maxValue: 3
+  sphereRadius: 0.236
+--- !u!114 &1031328397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1031328395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5577b517f5bc427d9ae68a61d6e31eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouring.ScalarFieldAuthoring
+  Origin:
+    x: 0
+    y: 0
+    z: 0
+  CellSize: 1
+  GridSize:
+    x: 6
+    y: 6
+    z: 6
+  Values: 030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303010101010101010101010101010101010101010101010101010101010101010101010101fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
+  SelectedCell:
+    x: -61
+    y: 3
+    z: 3
+--- !u!4 &1031328398
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1031328395}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1064507493
 GameObject:
   m_ObjectHideFlags: 0
@@ -130,7 +361,6 @@ GameObject:
   - component: {fileID: 1064507494}
   - component: {fileID: 1064507495}
   - component: {fileID: 1064507496}
-  - component: {fileID: 1064507497}
   m_Layer: 0
   m_Name: ScalarField
   m_TagString: Untagged
@@ -147,7 +377,7 @@ Transform:
   m_GameObject: {fileID: 1064507493}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.85, y: -1.24, z: -2.87}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -169,7 +399,7 @@ MonoBehaviour:
     x: 0
     y: 0
     z: 0
-  CellSize: 0.75
+  CellSize: 1
   GridSize:
     x: 6
     y: 6
@@ -197,21 +427,681 @@ MonoBehaviour:
   minValue: -3
   maxValue: 3
   sphereRadius: 0.236
---- !u!114 &1064507497
+--- !u!1 &1169186053
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1169186057}
+  - component: {fileID: 1169186056}
+  - component: {fileID: 1169186055}
+  m_Layer: 0
+  m_Name: ScalarField
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1169186055
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1064507493}
+  m_GameObject: {fileID: 1169186053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee8ca4038b5402e87efed7e957de142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringExample
+  instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
+    un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
+    ci-dessous."
+  minValue: -3
+  maxValue: 3
+  sphereRadius: 0.236
+--- !u!114 &1169186056
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1169186053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5577b517f5bc427d9ae68a61d6e31eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouring.ScalarFieldAuthoring
+  Origin:
+    x: 0
+    y: 0
+    z: 0
+  CellSize: 1
+  GridSize:
+    x: 6
+    y: 6
+    z: 6
+  Values: 030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303010101010101010101010101010101010101010101010101010101010101010101010101fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
+  SelectedCell:
+    x: -61
+    y: 3
+    z: 3
+--- !u!4 &1169186057
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1169186053}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1256156929
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1256156932}
+  - component: {fileID: 1256156931}
+  - component: {fileID: 1256156930}
+  m_Layer: 0
+  m_Name: ScalarField
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1256156930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1256156929}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee8ca4038b5402e87efed7e957de142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringExample
+  instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
+    un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
+    ci-dessous."
+  minValue: -3
+  maxValue: 3
+  sphereRadius: 0.236
+--- !u!114 &1256156931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1256156929}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5577b517f5bc427d9ae68a61d6e31eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouring.ScalarFieldAuthoring
+  Origin:
+    x: 0
+    y: 0
+    z: 0
+  CellSize: 1
+  GridSize:
+    x: 6
+    y: 6
+    z: 6
+  Values: 030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303010101010101010101010101010101010101010101010101010101010101010101010101fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
+  SelectedCell:
+    x: -61
+    y: 3
+    z: 3
+--- !u!4 &1256156932
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1256156929}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1362233448
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1362233451}
+  - component: {fileID: 1362233450}
+  - component: {fileID: 1362233449}
+  m_Layer: 0
+  m_Name: ScalarField
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1362233449
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1362233448}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee8ca4038b5402e87efed7e957de142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringExample
+  instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
+    un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
+    ci-dessous."
+  minValue: -3
+  maxValue: 3
+  sphereRadius: 0.236
+--- !u!114 &1362233450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1362233448}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5577b517f5bc427d9ae68a61d6e31eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouring.ScalarFieldAuthoring
+  Origin:
+    x: 0
+    y: 0
+    z: 0
+  CellSize: 1
+  GridSize:
+    x: 6
+    y: 6
+    z: 6
+  Values: 030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303010101010101010101010101010101010101010101010101010101010101010101010101fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
+  SelectedCell:
+    x: -61
+    y: 3
+    z: 3
+--- !u!4 &1362233451
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1362233448}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1368335635
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1368335638}
+  - component: {fileID: 1368335637}
+  - component: {fileID: 1368335636}
+  m_Layer: 0
+  m_Name: ScalarField
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1368335636
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1368335635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee8ca4038b5402e87efed7e957de142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringExample
+  instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
+    un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
+    ci-dessous."
+  minValue: -3
+  maxValue: 3
+  sphereRadius: 0.236
+--- !u!114 &1368335637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1368335635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5577b517f5bc427d9ae68a61d6e31eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouring.ScalarFieldAuthoring
+  Origin:
+    x: 0
+    y: 0
+    z: 0
+  CellSize: 1
+  GridSize:
+    x: 6
+    y: 6
+    z: 6
+  Values: 030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303010101010101010101010101010101010101010101010101010101010101010101010101fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
+  SelectedCell:
+    x: -61
+    y: 3
+    z: 3
+--- !u!4 &1368335638
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1368335635}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1529699002
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1529699005}
+  - component: {fileID: 1529699004}
+  - component: {fileID: 1529699003}
+  m_Layer: 0
+  m_Name: ScalarField
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1529699003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1529699002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee8ca4038b5402e87efed7e957de142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringExample
+  instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
+    un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
+    ci-dessous."
+  minValue: -3
+  maxValue: 3
+  sphereRadius: 0.236
+--- !u!114 &1529699004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1529699002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5577b517f5bc427d9ae68a61d6e31eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouring.ScalarFieldAuthoring
+  Origin:
+    x: 0
+    y: 0
+    z: 0
+  CellSize: 1
+  GridSize:
+    x: 6
+    y: 6
+    z: 6
+  Values: 030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303010101010101010101010101010101010101010101010101010101010101010101010101fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
+  SelectedCell:
+    x: -61
+    y: 3
+    z: 3
+--- !u!4 &1529699005
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1529699002}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1583788650
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1583788652}
+  - component: {fileID: 1583788651}
+  m_Layer: 0
+  m_Name: MaterialReference
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1583788651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1583788650}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3189527dc398489ab3e88e417c896d0a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DualContouringMaterialAuthoring
   Material: {fileID: 2100000, guid: 5bc7c96a8edfca343954857894b0c393, type: 2}
+--- !u!4 &1583788652
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1583788650}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.85, y: -1.24, z: -2.87}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1623608123
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1623608126}
+  - component: {fileID: 1623608125}
+  - component: {fileID: 1623608124}
+  m_Layer: 0
+  m_Name: ScalarField
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1623608124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1623608123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee8ca4038b5402e87efed7e957de142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringExample
+  instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
+    un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
+    ci-dessous."
+  minValue: -3
+  maxValue: 3
+  sphereRadius: 0.236
+--- !u!114 &1623608125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1623608123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5577b517f5bc427d9ae68a61d6e31eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouring.ScalarFieldAuthoring
+  Origin:
+    x: 0
+    y: 0
+    z: 0
+  CellSize: 1
+  GridSize:
+    x: 6
+    y: 6
+    z: 6
+  Values: 030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303010101010101010101010101010101010101010101010101010101010101010101010101fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
+  SelectedCell:
+    x: -61
+    y: 3
+    z: 3
+--- !u!4 &1623608126
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1623608123}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1729089746
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1729089749}
+  - component: {fileID: 1729089748}
+  - component: {fileID: 1729089747}
+  m_Layer: 0
+  m_Name: ScalarField
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1729089747
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1729089746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee8ca4038b5402e87efed7e957de142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringExample
+  instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
+    un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
+    ci-dessous."
+  minValue: -3
+  maxValue: 3
+  sphereRadius: 0.236
+--- !u!114 &1729089748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1729089746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5577b517f5bc427d9ae68a61d6e31eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouring.ScalarFieldAuthoring
+  Origin:
+    x: 0
+    y: 0
+    z: 0
+  CellSize: 1
+  GridSize:
+    x: 6
+    y: 6
+    z: 6
+  Values: 030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303010101010101010101010101010101010101010101010101010101010101010101010101fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
+  SelectedCell:
+    x: -61
+    y: 3
+    z: 3
+--- !u!4 &1729089749
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1729089746}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1790673337
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1790673340}
+  - component: {fileID: 1790673339}
+  - component: {fileID: 1790673338}
+  m_Layer: 0
+  m_Name: ScalarField
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1790673338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790673337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ee8ca4038b5402e87efed7e957de142, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringExample
+  instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
+    un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
+    ci-dessous."
+  minValue: -3
+  maxValue: 3
+  sphereRadius: 0.236
+--- !u!114 &1790673339
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790673337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5577b517f5bc427d9ae68a61d6e31eb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouring.ScalarFieldAuthoring
+  Origin:
+    x: 0
+    y: 0
+    z: 0
+  CellSize: 1
+  GridSize:
+    x: 6
+    y: 6
+    z: 6
+  Values: 030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303010101010101010101010101010101010101010101010101010101010101010101010101fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
+  SelectedCell:
+    x: -61
+    y: 3
+    z: 3
+--- !u!4 &1790673340
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790673337}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1064507494}
+  - {fileID: 1169186057}
+  - {fileID: 1729089749}
+  - {fileID: 1368335638}
+  - {fileID: 1623608126}
+  - {fileID: 296549106}
+  - {fileID: 1790673340}
+  - {fileID: 1529699005}
+  - {fileID: 446521548}
+  - {fileID: 1031328398}
+  - {fileID: 1256156932}
+  - {fileID: 1362233451}
+  - {fileID: 1583788652}
