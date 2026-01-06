@@ -169,7 +169,11 @@ MonoBehaviour:
     y: 0
     z: 0
   CellSize: 1
-  Values: ffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  GridSize:
+    x: 6
+    y: 6
+    z: 6
+  Values: 010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
   ShowGizmos: 1
   GizmoSize: 0.1
   SelectedCell:
@@ -191,11 +195,9 @@ MonoBehaviour:
   instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
     un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
     ci-dessous."
-  sphereValues: ffffffff32ffffffffff32ff327f32ff32ffffffffff32ffffffff
-  cubeValues: ffffffffffffffffffffffffff7fffffffffffffffffffffffffff
-  planeValues: ffffffffffffffffff3232323232323232327f7f7f7f7f7f7f7f7f
-  cornerValues: ffffffffffffffffffffffffff7f7fff7f7fffffffff7f7fff7f7f
-  exampleToApply: 2
+  minValue: -1
+  maxValue: 1
+  sphereRadius: 0.168
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

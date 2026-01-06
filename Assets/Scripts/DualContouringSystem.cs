@@ -17,17 +17,18 @@ using Unity.Mathematics;
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            foreach (var (scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer) in SystemAPI.Query<
+            foreach (var (scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, gridSize) in SystemAPI.Query<
                          DynamicBuffer<ScalarFieldValue>,
                          DynamicBuffer<DualContouringCell>,
-                         DynamicBuffer<DualContouringEdgeIntersection>>())
+                         DynamicBuffer<DualContouringEdgeIntersection>,
+                         RefRO<ScalarFieldGridSize>>())
             {
                 cellBuffer.Clear();
                 edgeIntersectionBuffer.Clear();
 
                 // Pour dual contouring, on traite les cellules (gridSize - 1)^3
                 // Avec une grille 3x3x3, on a 2x2x2 = 8 cellules possibles
-                int3 cellGridSize = ScalarFieldUtility.DefaultGridSize - new int3(1, 1, 1);
+                int3 cellGridSize = gridSize.ValueRO.Value - new int3(1, 1, 1);
                 
                 for (int y = 0; y < cellGridSize.y; y++)
                 {
@@ -35,7 +36,7 @@ using Unity.Mathematics;
                     {
                         for (int x = 0; x < cellGridSize.x; x++)
                         {
-                            ProcessCell(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, new int3(x, y, z));
+                            ProcessCell(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, new int3(x, y, z), gridSize.ValueRO.Value);
                         }
                     }
                 }
@@ -49,7 +50,8 @@ using Unity.Mathematics;
             DynamicBuffer<ScalarFieldValue> scalarField,
             DynamicBuffer<DualContouringCell> cells,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
-            int3 cellIndex)
+            int3 cellIndex,
+            int3 gridSize)
         {
             // Récupérer les 8 coins de la cellule
             float3 corner0Pos = float3.zero;
@@ -69,7 +71,7 @@ using Unity.Mathematics;
                 );
 
                 int3 cornerIndex = cellIndex + offset;
-                int scalarIndex = ScalarFieldUtility.CoordToIndex(cornerIndex, ScalarFieldUtility.DefaultGridSize);
+                int scalarIndex = ScalarFieldUtility.CoordToIndex(cornerIndex, gridSize);
 
                 if (scalarIndex >= 0 && scalarIndex < scalarField.Length)
                 {
@@ -105,7 +107,7 @@ using Unity.Mathematics;
             // Si on a une intersection, calculer une meilleure position du vertex
             if (hasVertex)
             {
-                vertexPosition = CalculateVertexPosition(scalarField, edgeIntersections, cellIndex, cellSize);
+                vertexPosition = CalculateVertexPosition(scalarField, edgeIntersections, cellIndex, cellSize, gridSize);
             }
 
             // Ajouter la cellule au buffer
@@ -125,10 +127,11 @@ using Unity.Mathematics;
             DynamicBuffer<ScalarFieldValue> scalarField,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             int3 cellIndex,
-            float cellSize)
+            float cellSize,
+            int3 gridSize)
         {
             // Collecter toutes les intersections et normales
-            int3 cellGridSize = ScalarFieldUtility.DefaultGridSize - new int3(1, 1, 1);
+            int3 cellGridSize = gridSize - new int3(1, 1, 1);
             int currentCellIndex = ScalarFieldUtility.CoordToIndex(cellIndex, cellGridSize);
             
             // Structures pour stocker les intersections temporaires
@@ -144,7 +147,7 @@ using Unity.Mathematics;
                 for (int z = 0; z < 2; z++)
                 {
                     if (TryGetEdgeIntersection(scalarField, cellIndex + new int3(0, y, z),
-                            cellIndex + new int3(1, y, z), out float3 intersection, out float3 normal))
+                            cellIndex + new int3(1, y, z), out float3 intersection, out float3 normal, gridSize))
                     {
                         positions[count] = intersection;
                         normals[count] = normal;
@@ -167,7 +170,7 @@ using Unity.Mathematics;
                 for (int z = 0; z < 2; z++)
                 {
                     if (TryGetEdgeIntersection(scalarField, cellIndex + new int3(x, 0, z),
-                            cellIndex + new int3(x, 1, z), out float3 intersection, out float3 normal))
+                            cellIndex + new int3(x, 1, z), out float3 intersection, out float3 normal, gridSize))
                     {
                         positions[count] = intersection;
                         normals[count] = normal;
@@ -190,7 +193,7 @@ using Unity.Mathematics;
                 for (int y = 0; y < 2; y++)
                 {
                     if (TryGetEdgeIntersection(scalarField, cellIndex + new int3(x, y, 0),
-                            cellIndex + new int3(x, y, 1), out float3 intersection, out float3 normal))
+                            cellIndex + new int3(x, y, 1), out float3 intersection, out float3 normal, gridSize))
                     {
                         positions[count] = intersection;
                         normals[count] = normal;
@@ -215,7 +218,7 @@ using Unity.Mathematics;
                 float3 vertexPos = SolveQef(positions, normals, count, massPoint);
                 
                 // Contraindre le vertex à l'intérieur de la cellule
-                int scalarIndex = ScalarFieldUtility.CoordToIndex(cellIndex, ScalarFieldUtility.DefaultGridSize);
+                int scalarIndex = ScalarFieldUtility.CoordToIndex(cellIndex, gridSize);
                 if (scalarIndex >= 0 && scalarIndex < scalarField.Length)
                 {
                     float3 cellMin = scalarField[scalarIndex].Position;
@@ -227,7 +230,7 @@ using Unity.Mathematics;
             }
 
             // Fallback: centre de la cellule
-            int fallbackIndex = ScalarFieldUtility.CoordToIndex(cellIndex, ScalarFieldUtility.DefaultGridSize);
+            int fallbackIndex = ScalarFieldUtility.CoordToIndex(cellIndex, gridSize);
             if (fallbackIndex >= 0 && fallbackIndex < scalarField.Length)
             {
                 return scalarField[fallbackIndex].Position + new float3(0.5f, 0.5f, 0.5f) * cellSize;
@@ -362,13 +365,14 @@ using Unity.Mathematics;
             int3 corner1Index,
             int3 corner2Index,
             out float3 intersection,
-            out float3 normal)
+            out float3 normal,
+            int3 gridSize)
         {
             intersection = float3.zero;
             normal = float3.zero;
 
-            int idx1 = ScalarFieldUtility.CoordToIndex(corner1Index, ScalarFieldUtility.DefaultGridSize);
-            int idx2 = ScalarFieldUtility.CoordToIndex(corner2Index, ScalarFieldUtility.DefaultGridSize);
+            int idx1 = ScalarFieldUtility.CoordToIndex(corner1Index, gridSize);
+            int idx2 = ScalarFieldUtility.CoordToIndex(corner2Index, gridSize);
 
             if (idx1 < 0 || idx1 >= scalarField.Length || idx2 < 0 || idx2 >= scalarField.Length)
             {
@@ -386,7 +390,7 @@ using Unity.Mathematics;
                 intersection = math.lerp(v1.Position, v2.Position, t);
                 
                 // Calculer la normale en utilisant le gradient (approximation par différence finie)
-                normal = CalculateNormal(scalarField, intersection);
+                normal = CalculateNormal(scalarField, intersection, gridSize);
                 
                 return true;
             }
@@ -397,7 +401,7 @@ using Unity.Mathematics;
         /// <summary>
         ///     Calcule la normale au point d'intersection en utilisant le gradient du champ scalaire
         /// </summary>
-        private float3 CalculateNormal(DynamicBuffer<ScalarFieldValue> scalarField, float3 position)
+        private float3 CalculateNormal(DynamicBuffer<ScalarFieldValue> scalarField, float3 position, int3 gridSize)
         {
             // Pour calculer la normale, on utilise le gradient du champ scalaire
             // La normale est le gradient normalisé
@@ -423,18 +427,18 @@ using Unity.Mathematics;
             float epsilon = cellSize * 0.1f;
             
             // Gradient en X
-            float valueXPlus = SampleScalarField(scalarField, position + new float3(epsilon, 0, 0));
-            float valueXMinus = SampleScalarField(scalarField, position - new float3(epsilon, 0, 0));
+            float valueXPlus = SampleScalarField(scalarField, position + new float3(epsilon, 0, 0), gridSize);
+            float valueXMinus = SampleScalarField(scalarField, position - new float3(epsilon, 0, 0), gridSize);
             float gradX = (valueXPlus - valueXMinus) / (2.0f * epsilon);
             
             // Gradient en Y
-            float valueYPlus = SampleScalarField(scalarField, position + new float3(0, epsilon, 0));
-            float valueYMinus = SampleScalarField(scalarField, position - new float3(0, epsilon, 0));
+            float valueYPlus = SampleScalarField(scalarField, position + new float3(0, epsilon, 0), gridSize);
+            float valueYMinus = SampleScalarField(scalarField, position - new float3(0, epsilon, 0), gridSize);
             float gradY = (valueYPlus - valueYMinus) / (2.0f * epsilon);
             
             // Gradient en Z
-            float valueZPlus = SampleScalarField(scalarField, position + new float3(0, 0, epsilon));
-            float valueZMinus = SampleScalarField(scalarField, position - new float3(0, 0, epsilon));
+            float valueZPlus = SampleScalarField(scalarField, position + new float3(0, 0, epsilon), gridSize);
+            float valueZMinus = SampleScalarField(scalarField, position - new float3(0, 0, epsilon), gridSize);
             float gradZ = (valueZPlus - valueZMinus) / (2.0f * epsilon);
             
             float3 gradient = new float3(gradX, gradY, gradZ);
@@ -453,7 +457,7 @@ using Unity.Mathematics;
         /// <summary>
         ///     Échantillonne le champ scalaire à une position donnée (interpolation trilinéaire)
         /// </summary>
-        private float SampleScalarField(DynamicBuffer<ScalarFieldValue> scalarField, float3 position)
+        private float SampleScalarField(DynamicBuffer<ScalarFieldValue> scalarField, float3 position, int3 gridSize)
         {
             // Trouver la cellule qui contient la position
             // On suppose que la grille commence à l'origine du premier point
@@ -492,19 +496,19 @@ using Unity.Mathematics;
             float3 t = gridPos - new float3(baseCell);
             
             // Clamp pour éviter les dépassements
-            baseCell = math.clamp(baseCell, int3.zero, ScalarFieldUtility.DefaultGridSize - new int3(2, 2, 2));
+            baseCell = math.clamp(baseCell, int3.zero, gridSize - new int3(2, 2, 2));
             t = math.clamp(t, 0.0f, 1.0f);
             
             // Interpolation trilinéaire
             // Récupérer les 8 valeurs aux coins de la cellule
-            float v000 = GetScalarValueAtCoord(scalarField, baseCell + new int3(0, 0, 0));
-            float v100 = GetScalarValueAtCoord(scalarField, baseCell + new int3(1, 0, 0));
-            float v010 = GetScalarValueAtCoord(scalarField, baseCell + new int3(0, 1, 0));
-            float v110 = GetScalarValueAtCoord(scalarField, baseCell + new int3(1, 1, 0));
-            float v001 = GetScalarValueAtCoord(scalarField, baseCell + new int3(0, 0, 1));
-            float v101 = GetScalarValueAtCoord(scalarField, baseCell + new int3(1, 0, 1));
-            float v011 = GetScalarValueAtCoord(scalarField, baseCell + new int3(0, 1, 1));
-            float v111 = GetScalarValueAtCoord(scalarField, baseCell + new int3(1, 1, 1));
+            float v000 = GetScalarValueAtCoord(scalarField, baseCell + new int3(0, 0, 0), gridSize);
+            float v100 = GetScalarValueAtCoord(scalarField, baseCell + new int3(1, 0, 0), gridSize);
+            float v010 = GetScalarValueAtCoord(scalarField, baseCell + new int3(0, 1, 0), gridSize);
+            float v110 = GetScalarValueAtCoord(scalarField, baseCell + new int3(1, 1, 0), gridSize);
+            float v001 = GetScalarValueAtCoord(scalarField, baseCell + new int3(0, 0, 1), gridSize);
+            float v101 = GetScalarValueAtCoord(scalarField, baseCell + new int3(1, 0, 1), gridSize);
+            float v011 = GetScalarValueAtCoord(scalarField, baseCell + new int3(0, 1, 1), gridSize);
+            float v111 = GetScalarValueAtCoord(scalarField, baseCell + new int3(1, 1, 1), gridSize);
             
             // Interpolation selon X
             float v00 = math.lerp(v000, v100, t.x);
@@ -523,9 +527,9 @@ using Unity.Mathematics;
         /// <summary>
         ///     Récupère la valeur scalaire à une coordonnée de grille donnée
         /// </summary>
-        private float GetScalarValueAtCoord(DynamicBuffer<ScalarFieldValue> scalarField, int3 coord)
+        private float GetScalarValueAtCoord(DynamicBuffer<ScalarFieldValue> scalarField, int3 coord, int3 gridSize)
         {
-            int index = ScalarFieldUtility.CoordToIndex(coord, ScalarFieldUtility.DefaultGridSize);
+            int index = ScalarFieldUtility.CoordToIndex(coord, gridSize);
             if (index >= 0 && index < scalarField.Length)
             {
                 return scalarField[index].Value;

@@ -20,15 +20,16 @@ public partial struct DualContouringMeshGenerationSystem : ISystem
     [BurstCompile]
     public void OnUpdate(ref SystemState state)
     {
-        foreach (var (cellBuffer, vertexBuffer, triangleBuffer) in SystemAPI.Query<
+        foreach (var (cellBuffer, vertexBuffer, triangleBuffer, gridSize) in SystemAPI.Query<
                      DynamicBuffer<DualContouringCell>,
                      DynamicBuffer<DualContouringMeshVertex>,
-                     DynamicBuffer<DualContouringMeshTriangle>>())
+                     DynamicBuffer<DualContouringMeshTriangle>,
+                     RefRO<ScalarFieldGridSize>>())
         {
             vertexBuffer.Clear();
             triangleBuffer.Clear();
 
-            int3 cellGridSize = ScalarFieldUtility.DefaultGridSize - new int3(1, 1, 1);
+            int3 cellGridSize = gridSize.ValueRO.Value - new int3(1, 1, 1);
             
             // Créer un mapping entre l'index de cellule et l'index de vertex
             NativeHashMap<int, int> cellToVertexIndex = new NativeHashMap<int, int>(cellBuffer.Length, Allocator.Temp);

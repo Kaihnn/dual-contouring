@@ -65,10 +65,4 @@ public static class ScalarFieldUtility
                coord.y >= 0 && coord.y < gridSize.y &&
                coord.z >= 0 && coord.z < gridSize.z;
     }
-
-    /// <summary>
-    ///     Taille de grille par défaut pour le dual contouring (3x3x3)
-    /// </summary>
-    public static readonly int3 DefaultGridSize = new int3(3, 3, 3);
 }
-

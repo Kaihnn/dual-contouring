@@ -14,13 +14,14 @@ public partial class DualContouringVisualizationSystem : SystemBase
 
         public void DrawGizmos()
         {
-            foreach (var (cellBuffer, edgeIntersectionBuffer, selectedCell) in SystemAPI.Query<
+            foreach (var (cellBuffer, edgeIntersectionBuffer, selectedCell, gridSize) in SystemAPI.Query<
                          DynamicBuffer<DualContouringCell>,
                          DynamicBuffer<DualContouringEdgeIntersection>,
-                         RefRO<SelectedCell>>())
+                         RefRO<SelectedCell>,
+                         RefRO<ScalarFieldGridSize>>())
             {
                 // Calculer l'index de la cellule sélectionnée
-                int3 cellGridSize = ScalarFieldUtility.DefaultGridSize - new int3(1, 1, 1);
+                int3 cellGridSize = gridSize.ValueRO.Value - new int3(1, 1, 1);
                 int selectedIndex = ScalarFieldUtility.CoordToIndex(selectedCell.ValueRO.Value, cellGridSize);
                 
                 // Si l'index est invalide, dessiner toutes les cellules

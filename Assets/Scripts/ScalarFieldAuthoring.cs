@@ -12,6 +12,8 @@ public class ScalarFieldAuthoring : MonoBehaviour
     [Header("Grid Settings")]
     public float3 Origin = float3.zero;
     public float CellSize = 1f;
+    [Tooltip("Taille de la grille (nombre de points dans chaque dimension)")]
+    public int3 GridSize = new int3(3, 3, 3);
     public sbyte[] Values;
 
     [Header("Visualization")]
@@ -28,11 +30,11 @@ public class ScalarFieldAuthoring : MonoBehaviour
 
         // Visualiser les valeurs du champ scalaire
         int index = 0;
-        for (int y = 0; y < 3; y++)
+        for (int y = 0; y < GridSize.y; y++)
         {
-            for (int z = 0; z < 3; z++)
+            for (int z = 0; z < GridSize.z; z++)
             {
-                for (int x = 0; x < 3; x++)
+                for (int x = 0; x < GridSize.x; x++)
                 {
                     float3 position = Origin + new float3(x, y, z) * CellSize;
                     float value = Values != null && index < Values.Length ? Values[index] : 0f;
@@ -75,6 +77,11 @@ public class ScalarFieldAuthoring : MonoBehaviour
             {
                 Value = authoring.SelectedCell
             });
+            AddComponent(entity, new ScalarFieldGridSize
+            {
+                Value = authoring.GridSize,
+                CellSize = authoring.CellSize
+            });
             AddBuffer<DualContouringCell>(entity);
             AddBuffer<DualContouringEdgeIntersection>(entity);
             AddBuffer<DualContouringMeshVertex>(entity);
@@ -83,11 +90,11 @@ public class ScalarFieldAuthoring : MonoBehaviour
 
             // Générer les valeurs scalaires selon le type
             int index = 0;
-            for (int y = 0; y < 3; y++)
+            for (int y = 0; y < authoring.GridSize.y; y++)
             {
-                for (int z = 0; z < 3; z++)
+                for (int z = 0; z < authoring.GridSize.z; z++)
                 {
-                    for (int x = 0; x < 3; x++)
+                    for (int x = 0; x < authoring.GridSize.x; x++)
                     {
                         float3 position = authoring.Origin + new float3(x, y, z) * authoring.CellSize;
                         float value = authoring.Values != null && index < authoring.Values.Length ? authoring.Values[index] : 0f;
