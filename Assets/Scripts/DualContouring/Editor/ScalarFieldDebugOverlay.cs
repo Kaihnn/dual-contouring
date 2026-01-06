@@ -19,6 +19,11 @@ namespace DualContouring.Editor
         private ScrollView _scrollView;
         private Label _headerLabel;
         private Dictionary<Entity, Button> _entityButtons = new Dictionary<Entity, Button>();
+        private VisualElement _selectedPanel;
+        private Label _selectedTitleLabel;
+        private IntegerField _selectedCellXField;
+        private IntegerField _selectedCellYField;
+        private IntegerField _selectedCellZField;
 
         public override VisualElement CreatePanelContent()
         {
@@ -33,7 +38,7 @@ namespace DualContouring.Editor
             _root.style.borderTopLeftRadius = 5;
             _root.style.borderTopRightRadius = 5;
             _root.style.minWidth = 250;
-            _root.style.maxHeight = 400;
+            _root.style.maxHeight = 500;
 
             // Header
             _headerLabel = new Label("Scalar Fields");
@@ -48,6 +53,93 @@ namespace DualContouring.Editor
             _scrollView = new ScrollView();
             _scrollView.style.flexGrow = 1;
             _root.Add(_scrollView);
+
+            // Séparateur
+            var separator = new VisualElement();
+            separator.style.height = 1;
+            separator.style.backgroundColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+            separator.style.marginTop = 5;
+            separator.style.marginBottom = 5;
+            _root.Add(separator);
+
+            // Panel "Selected Scalar Field"
+            _selectedPanel = new VisualElement();
+            _selectedPanel.style.paddingLeft = 5;
+            _selectedPanel.style.paddingRight = 5;
+            _selectedPanel.style.paddingTop = 5;
+            _selectedPanel.style.paddingBottom = 5;
+            _selectedPanel.style.backgroundColor = new Color(0.15f, 0.15f, 0.15f, 0.8f);
+            _selectedPanel.style.borderBottomLeftRadius = 3;
+            _selectedPanel.style.borderBottomRightRadius = 3;
+            _selectedPanel.style.borderTopLeftRadius = 3;
+            _selectedPanel.style.borderTopRightRadius = 3;
+            _selectedPanel.style.display = DisplayStyle.None; // Caché par défaut
+
+            _selectedTitleLabel = new Label("Selected Scalar Field");
+            _selectedTitleLabel.style.fontSize = 12;
+            _selectedTitleLabel.style.color = new Color(0.5f, 0.9f, 1f);
+            _selectedTitleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            _selectedTitleLabel.style.marginBottom = 5;
+            _selectedPanel.Add(_selectedTitleLabel);
+
+            // Champs pour Selected Cell
+            var cellLabel = new Label("Selected Cell:");
+            cellLabel.style.fontSize = 10;
+            cellLabel.style.color = new Color(0.8f, 0.8f, 0.8f);
+            cellLabel.style.marginBottom = 2;
+            _selectedPanel.Add(cellLabel);
+
+            var cellContainer = new VisualElement();
+            cellContainer.style.flexDirection = FlexDirection.Row;
+            cellContainer.style.marginBottom = 3;
+            cellContainer.style.justifyContent = Justify.SpaceBetween;
+
+            // Label pour X
+            var xContainer = new VisualElement();
+            xContainer.style.flexDirection = FlexDirection.Column;
+            xContainer.style.flexGrow = 1;
+            xContainer.style.marginRight = 3;
+            var xLabel = new Label("X");
+            xLabel.style.fontSize = 9;
+            xLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
+            xLabel.style.marginBottom = 1;
+            xContainer.Add(xLabel);
+            _selectedCellXField = new IntegerField();
+            _selectedCellXField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
+            xContainer.Add(_selectedCellXField);
+            cellContainer.Add(xContainer);
+
+            // Label pour Y
+            var yContainer = new VisualElement();
+            yContainer.style.flexDirection = FlexDirection.Column;
+            yContainer.style.flexGrow = 1;
+            yContainer.style.marginRight = 3;
+            var yLabel = new Label("Y");
+            yLabel.style.fontSize = 9;
+            yLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
+            yLabel.style.marginBottom = 1;
+            yContainer.Add(yLabel);
+            _selectedCellYField = new IntegerField();
+            _selectedCellYField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
+            yContainer.Add(_selectedCellYField);
+            cellContainer.Add(yContainer);
+
+            // Label pour Z
+            var zContainer = new VisualElement();
+            zContainer.style.flexDirection = FlexDirection.Column;
+            zContainer.style.flexGrow = 1;
+            var zLabel = new Label("Z");
+            zLabel.style.fontSize = 9;
+            zLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
+            zLabel.style.marginBottom = 1;
+            zContainer.Add(zLabel);
+            _selectedCellZField = new IntegerField();
+            _selectedCellZField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
+            zContainer.Add(_selectedCellZField);
+            cellContainer.Add(zContainer);
+
+            _selectedPanel.Add(cellContainer);
+            _root.Add(_selectedPanel);
 
             // S'abonner aux mises à jour
             EditorApplication.update += OnEditorUpdate;
@@ -98,6 +190,11 @@ namespace DualContouring.Editor
                 noDataLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
                 noDataLabel.style.marginTop = 10;
                 _scrollView.Add(noDataLabel);
+                
+                // Cacher le panel de sélection
+                if (_selectedPanel != null)
+                    _selectedPanel.style.display = DisplayStyle.None;
+                    
                 return;
             }
 
@@ -160,6 +257,84 @@ namespace DualContouring.Editor
             }
 
             entities.Dispose();
+
+            // Mettre à jour le panel de sélection
+            UpdateSelectedPanel();
+        }
+
+        private void UpdateSelectedPanel()
+        {
+            if (!Application.isPlaying || World.DefaultGameObjectInjectionWorld == null || _selectedPanel == null)
+            {
+                if (_selectedPanel != null)
+                    _selectedPanel.style.display = DisplayStyle.None;
+                return;
+            }
+
+            EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+            EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldGridSize), typeof(ScalarFieldSelected));
+            NativeArray<Entity> selectedEntities = query.ToEntityArray(Allocator.Temp);
+
+            if (selectedEntities.Length == 0)
+            {
+                _selectedPanel.style.display = DisplayStyle.None;
+                selectedEntities.Dispose();
+                return;
+            }
+
+            // Afficher le panel
+            _selectedPanel.style.display = DisplayStyle.Flex;
+
+            Entity selectedEntity = selectedEntities[0];
+            selectedEntities.Dispose();
+
+            // Mettre à jour le titre
+            _selectedTitleLabel.text = $"Selected: Scalar Field {selectedEntity.Index}";
+
+            // Récupérer et afficher la Selected Cell
+            if (entityManager.HasComponent<SelectedCell>(selectedEntity))
+            {
+                var selectedCell = entityManager.GetComponentData<SelectedCell>(selectedEntity);
+                
+                // Mettre à jour les champs sans déclencher l'événement
+                _selectedCellXField.SetValueWithoutNotify(selectedCell.Value.x);
+                _selectedCellYField.SetValueWithoutNotify(selectedCell.Value.y);
+                _selectedCellZField.SetValueWithoutNotify(selectedCell.Value.z);
+            }
+        }
+
+        private void OnSelectedCellChanged()
+        {
+            if (!Application.isPlaying || World.DefaultGameObjectInjectionWorld == null)
+                return;
+
+            EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+            EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldGridSize), typeof(ScalarFieldSelected));
+            NativeArray<Entity> selectedEntities = query.ToEntityArray(Allocator.Temp);
+
+            if (selectedEntities.Length == 0)
+            {
+                selectedEntities.Dispose();
+                return;
+            }
+
+            Entity selectedEntity = selectedEntities[0];
+            selectedEntities.Dispose();
+
+            // Mettre à jour le composant SelectedCell
+            if (entityManager.HasComponent<SelectedCell>(selectedEntity))
+            {
+                var newSelectedCell = new SelectedCell
+                {
+                    Value = new Unity.Mathematics.int3(
+                        _selectedCellXField.value,
+                        _selectedCellYField.value,
+                        _selectedCellZField.value
+                    )
+                };
+                entityManager.SetComponentData(selectedEntity, newSelectedCell);
+                SceneView.RepaintAll();
+            }
         }
 
         private void CreateButtonForEntity(Entity entity, int index)
@@ -185,20 +360,32 @@ namespace DualContouring.Editor
             if (!entityManager.Exists(entity))
                 return;
 
-            // Basculer la sélection
-            if (entityManager.HasComponent<ScalarFieldSelected>(entity))
+            bool wasSelected = entityManager.HasComponent<ScalarFieldSelected>(entity);
+
+            // Désélectionner TOUS les Scalar Fields
+            EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldGridSize));
+            NativeArray<Entity> allEntities = query.ToEntityArray(Allocator.Temp);
+            
+            foreach (Entity e in allEntities)
             {
-                entityManager.RemoveComponent<ScalarFieldSelected>(entity);
+                if (entityManager.HasComponent<ScalarFieldSelected>(e))
+                {
+                    entityManager.RemoveComponent<ScalarFieldSelected>(e);
+                }
             }
-            else
+            allEntities.Dispose();
+
+            // Si l'entité n'était pas sélectionnée, la sélectionner maintenant
+            // (comportement de toggle, mais un seul à la fois)
+            if (!wasSelected)
             {
                 entityManager.AddComponent<ScalarFieldSelected>(entity);
             }
 
-            // Mettre à jour l'affichage
-            if (_entityButtons.TryGetValue(entity, out Button button))
+            // Mettre à jour l'affichage de TOUS les boutons
+            foreach (var kvp in _entityButtons)
             {
-                UpdateButtonText(entity, button);
+                UpdateButtonText(kvp.Key, kvp.Value);
             }
 
             SceneView.RepaintAll();

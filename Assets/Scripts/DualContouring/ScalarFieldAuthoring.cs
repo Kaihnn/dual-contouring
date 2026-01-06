@@ -17,8 +17,6 @@ namespace DualContouring
         [Tooltip("Taille de la grille (nombre de points dans chaque dimension)")]
         public int3 GridSize = new int3(3, 3, 3);
         public sbyte[] Values;
-        [Header("Visualization")]
-        public int3 SelectedCell = new int3(0, 0, 0);
 
         private void OnDrawGizmos()
         {
@@ -41,7 +39,7 @@ namespace DualContouring
                 AddComponent(entity,
                     new SelectedCell
                     {
-                        Value = authoring.SelectedCell
+                        Value = 0
                     });
                 AddComponent(entity,
                     new ScalarFieldGridSize
