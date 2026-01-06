@@ -46,7 +46,7 @@ public partial struct DualContouringMeshGenerationSystem : ISystem
                     vertexBuffer.Add(new DualContouringMeshVertex
                     {
                         Position = cell.VertexPosition,
-                        Normal = float3.zero // Sera calculé plus tard
+                        Normal = cell.Normal // Utiliser la normale calculée de la cellule
                     });
                 }
             }
@@ -55,20 +55,19 @@ public partial struct DualContouringMeshGenerationSystem : ISystem
             // Dans le dual contouring, on crée une face pour chaque arête de la grille qui traverse la surface
             // On parcourt toutes les arêtes possibles de la grille de cellules
             
-            // Faces perpendiculaires à l'axe X (entre cellules le long de X) - inversé
+            // Faces perpendiculaires à l'axe X (entre cellules le long de X)
             GenerateFacesAlongAxis(cellBuffer, cellToVertexIndex, vertexBuffer, triangleBuffer, 
-                cellGridSize, new int3(1, 0, 0), new int3(0, 1, 0), new int3(0, 0, 1), true);
+                cellGridSize, new int3(1, 0, 0), new int3(0, 1, 0), new int3(0, 0, 1));
             
             // Faces perpendiculaires à l'axe Y (entre cellules le long de Y)
             GenerateFacesAlongAxis(cellBuffer, cellToVertexIndex, vertexBuffer, triangleBuffer, 
-                cellGridSize, new int3(0, 1, 0), new int3(0, 0, 1), new int3(1, 0, 0), false);
+                cellGridSize, new int3(0, 1, 0), new int3(0, 0, 1), new int3(1, 0, 0));
             
-            // Faces perpendiculaires à l'axe Z (entre cellules le long de Z) - inversé
+            // Faces perpendiculaires à l'axe Z (entre cellules le long de Z)
             GenerateFacesAlongAxis(cellBuffer, cellToVertexIndex, vertexBuffer, triangleBuffer, 
-                cellGridSize, new int3(0, 0, 1), new int3(1, 0, 0), new int3(0, 1, 0), true);
+                cellGridSize, new int3(0, 0, 1), new int3(1, 0, 0), new int3(0, 1, 0));
             
-            // Recalculer les normales
-            RecalculateNormals(vertexBuffer, triangleBuffer);
+            // Les normales sont déjà définies à partir des cellules, pas besoin de les recalculer
             
             cellToVertexIndex.Dispose();
         }
@@ -85,8 +84,7 @@ public partial struct DualContouringMeshGenerationSystem : ISystem
         int3 cellGridSize,
         int3 axisDir,      // Direction de l'arête (direction normale à la face)
         int3 tangent1,     // Premier axe tangent à la face
-        int3 tangent2,     // Deuxième axe tangent à la face
-        bool invertFaces)  // Inverser l'ordre des faces pour corriger les normales
+        int3 tangent2)     // Deuxième axe tangent à la face
     {
         // Pour chaque position possible d'arête le long de cet axe
         int3 maxCoord = cellGridSize - axisDir;
@@ -129,103 +127,57 @@ public partial struct DualContouringMeshGenerationSystem : ISystem
                     }
                     
                     // Créer un quad (2 triangles) entre les 4 vertices
-                    // L'ordre des vertices détermine la direction de la normale
-                    // On utilise la règle de la main droite
+                    // L'ordre des vertices est déterminé par la normale de face (moyenne des normales des vertices)
                     
-                    if (invertFaces)
-                    {
-                        // Triangle 1: v00, v11, v10 (inversé)
-                        triangleBuffer.Add(new DualContouringMeshTriangle { Index = v00 });
-                        triangleBuffer.Add(new DualContouringMeshTriangle { Index = v11 });
-                        triangleBuffer.Add(new DualContouringMeshTriangle { Index = v10 });
-                        
-                        // Triangle 2: v00, v01, v11 (inversé)
-                        triangleBuffer.Add(new DualContouringMeshTriangle { Index = v00 });
-                        triangleBuffer.Add(new DualContouringMeshTriangle { Index = v01 });
-                        triangleBuffer.Add(new DualContouringMeshTriangle { Index = v11 });
-                    }
-                    else
-                    {
-                        // Triangle 1: v00, v10, v11
-                        triangleBuffer.Add(new DualContouringMeshTriangle { Index = v00 });
-                        triangleBuffer.Add(new DualContouringMeshTriangle { Index = v10 });
-                        triangleBuffer.Add(new DualContouringMeshTriangle { Index = v11 });
-                        
-                        // Triangle 2: v00, v11, v01
-                        triangleBuffer.Add(new DualContouringMeshTriangle { Index = v00 });
-                        triangleBuffer.Add(new DualContouringMeshTriangle { Index = v11 });
-                        triangleBuffer.Add(new DualContouringMeshTriangle { Index = v01 });
-                    }
+                    // Triangle 1: v00, v10, v11
+                    AddTriangleWithCorrectWinding(triangleBuffer, vertexBuffer, v00, v10, v11);
+                    
+                    // Triangle 2: v00, v11, v01
+                    AddTriangleWithCorrectWinding(triangleBuffer, vertexBuffer, v00, v11, v01);
                 }
             }
         }
     }
     
     /// <summary>
-    ///     Recalcule les normales des vertices en moyennant les normales des faces
+    ///     Ajoute un triangle en déterminant automatiquement l'ordre correct des vertices
+    ///     en utilisant la normale de face (moyenne des normales des vertices)
     /// </summary>
-    private void RecalculateNormals(
+    private void AddTriangleWithCorrectWinding(
+        DynamicBuffer<DualContouringMeshTriangle> triangleBuffer,
         DynamicBuffer<DualContouringMeshVertex> vertexBuffer,
-        DynamicBuffer<DualContouringMeshTriangle> triangleBuffer)
+        int i0, int i1, int i2)
     {
-        if (vertexBuffer.Length == 0 || triangleBuffer.Length < 3)
-        {
-            return;
-        }
+        // Récupérer les vertices
+        DualContouringMeshVertex v0 = vertexBuffer[i0];
+        DualContouringMeshVertex v1 = vertexBuffer[i1];
+        DualContouringMeshVertex v2 = vertexBuffer[i2];
         
-        // Initialiser toutes les normales à zéro
-        NativeArray<float3> normals = new NativeArray<float3>(vertexBuffer.Length, Allocator.Temp);
-        for (int i = 0; i < normals.Length; i++)
-        {
-            normals[i] = float3.zero;
-        }
+        // Calculer la normale de face : moyenne des normales des 3 vertices
+        float3 faceNormal = math.normalize(v0.Normal + v1.Normal + v2.Normal);
         
-        // Accumuler les normales de chaque face
-        for (int i = 0; i < triangleBuffer.Length; i += 3)
-        {
-            int i0 = triangleBuffer[i + 0].Index;
-            int i1 = triangleBuffer[i + 1].Index;
-            int i2 = triangleBuffer[i + 2].Index;
-            
-            if (i0 >= 0 && i0 < vertexBuffer.Length &&
-                i1 >= 0 && i1 < vertexBuffer.Length &&
-                i2 >= 0 && i2 < vertexBuffer.Length)
-            {
-                float3 p0 = vertexBuffer[i0].Position;
-                float3 p1 = vertexBuffer[i1].Position;
-                float3 p2 = vertexBuffer[i2].Position;
-                
-                float3 edge1 = p1 - p0;
-                float3 edge2 = p2 - p0;
-                float3 faceNormal = math.normalize(math.cross(edge1, edge2));
-                
-                // Ajouter la normale de la face à chaque vertex
-                normals[i0] += faceNormal;
-                normals[i1] += faceNormal;
-                normals[i2] += faceNormal;
-            }
-        }
+        // Calculer la normale géométrique du triangle (ordre v0, v1, v2)
+        float3 edge1 = v1.Position - v0.Position;
+        float3 edge2 = v2.Position - v0.Position;
+        float3 geometricNormal = math.normalize(math.cross(edge1, edge2));
         
-        // Normaliser les normales accumulées
-        for (int i = 0; i < vertexBuffer.Length; i++)
-        {
-            float3 normal = normals[i];
-            float length = math.length(normal);
-            if (length > 0.0001f)
-            {
-                normal = math.normalize(normal);
-            }
-            else
-            {
-                normal = new float3(0, 1, 0);
-            }
-            
-            DualContouringMeshVertex vertex = vertexBuffer[i];
-            vertex.Normal = normal;
-            vertexBuffer[i] = vertex;
-        }
+        // Vérifier si la normale géométrique est dans la même direction que la normale de face
+        float dot = math.dot(geometricNormal, faceNormal);
         
-        normals.Dispose();
+        if (dot > 0)
+        {
+            // Les normales sont dans la même direction, ordre normal
+            triangleBuffer.Add(new DualContouringMeshTriangle { Index = i0 });
+            triangleBuffer.Add(new DualContouringMeshTriangle { Index = i1 });
+            triangleBuffer.Add(new DualContouringMeshTriangle { Index = i2 });
+        }
+        else
+        {
+            // Les normales sont opposées, inverser l'ordre
+            triangleBuffer.Add(new DualContouringMeshTriangle { Index = i0 });
+            triangleBuffer.Add(new DualContouringMeshTriangle { Index = i2 });
+            triangleBuffer.Add(new DualContouringMeshTriangle { Index = i1 });
+        }
     }
 }
 

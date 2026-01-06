@@ -174,13 +174,13 @@ MonoBehaviour:
     x: 6
     y: 6
     z: 6
-  Values: 7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2ad6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181
+  Values: fdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfefefdfdfdfefffffefdfdfefffffefdfdfdfefefdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfefffffefdfdff0101fffdfdff0101fffdfdfefffffefdfdfdfdfdfdfdfdfdfdfdfdfdfdfefffffefdfdff0101fffdfdff0101fffdfdfefffffefdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfefefdfdfdfefffffefdfdfefffffefdfdfdfefefdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
   ShowGizmos: 1
   GizmoSize: 0.1
   SelectedCell:
-    x: -13
-    y: 0
-    z: 0
+    x: -61
+    y: 3
+    z: 3
 --- !u!114 &1064507496
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -196,9 +196,9 @@ MonoBehaviour:
   instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
     un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
     ci-dessous."
-  minValue: -127
-  maxValue: 127
-  sphereRadius: 0.441
+  minValue: -3
+  maxValue: 3
+  sphereRadius: 0.236
 --- !u!114 &1064507497
 MonoBehaviour:
   m_ObjectHideFlags: 0
