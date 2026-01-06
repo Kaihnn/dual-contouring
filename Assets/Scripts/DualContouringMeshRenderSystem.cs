@@ -8,7 +8,6 @@ using UnityEngine;
 public partial class DualContouringMeshRenderSystem : SystemBase
 {
     private Mesh _mesh;
-    private Material _material;
 
     protected override void OnCreate()
     {
@@ -20,11 +19,8 @@ public partial class DualContouringMeshRenderSystem : SystemBase
             name = "DualContouringMesh"
         };
         
-        // Créer un matériau simple (shader Standard)
-        _material = new Material(Shader.Find("Standard"))
-        {
-            color = new Color(0.7f, 0.9f, 1.0f, 1.0f)
-        };
+        // Require un singleton DualContouringMaterialReference pour que le système s'exécute
+        RequireForUpdate<DualContouringMaterialReference>();
     }
 
     protected override void OnDestroy()
@@ -35,15 +31,13 @@ public partial class DualContouringMeshRenderSystem : SystemBase
         {
             Object.Destroy(_mesh);
         }
-        
-        if (_material != null)
-        {
-            Object.Destroy(_material);
-        }
     }
 
     protected override void OnUpdate()
     {
+        // Récupérer le matériau depuis le singleton (composant managé)
+        var materialRef = SystemAPI.GetSingleton<DualContouringMaterialReference>();
+        
         // Mettre à jour le mesh avec les données générées
         foreach (var (vertexBuffer, triangleBuffer) in SystemAPI.Query<
                      DynamicBuffer<DualContouringMeshVertex>,
@@ -51,8 +45,8 @@ public partial class DualContouringMeshRenderSystem : SystemBase
         {
             UpdateMesh(vertexBuffer, triangleBuffer);
             
-            // Dessiner le mesh
-            Graphics.DrawMesh(_mesh, Matrix4x4.identity, _material, 0);
+            // Dessiner le mesh avec le matériau du singleton
+            Graphics.DrawMesh(_mesh, Matrix4x4.identity, materialRef.Material, 0);
         }
     }
 

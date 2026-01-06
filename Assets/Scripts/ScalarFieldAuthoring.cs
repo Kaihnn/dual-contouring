@@ -73,15 +73,18 @@ public class ScalarFieldAuthoring : MonoBehaviour
         public override void Bake(ScalarFieldAuthoring authoring)
         {
             Entity entity = GetEntity(TransformUsageFlags.None);
-            AddComponent(entity, new SelectedCell
-            {
-                Value = authoring.SelectedCell
-            });
-            AddComponent(entity, new ScalarFieldGridSize
-            {
-                Value = authoring.GridSize,
-                CellSize = authoring.CellSize
-            });
+            AddComponent(entity,
+                new SelectedCell
+                {
+                    Value = authoring.SelectedCell
+                });
+            AddComponent(entity,
+                new ScalarFieldGridSize
+                {
+                    Value = authoring.GridSize,
+                    CellSize = authoring.CellSize
+                });
+
             AddBuffer<DualContouringCell>(entity);
             AddBuffer<DualContouringEdgeIntersection>(entity);
             AddBuffer<DualContouringMeshVertex>(entity);

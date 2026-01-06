@@ -130,6 +130,7 @@ GameObject:
   - component: {fileID: 1064507494}
   - component: {fileID: 1064507495}
   - component: {fileID: 1064507496}
+  - component: {fileID: 1064507497}
   m_Layer: 0
   m_Name: ScalarField
   m_TagString: Untagged
@@ -173,7 +174,7 @@ MonoBehaviour:
     x: 6
     y: 6
     z: 6
-  Values: 010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  Values: 7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2ad6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181
   ShowGizmos: 1
   GizmoSize: 0.1
   SelectedCell:
@@ -195,9 +196,22 @@ MonoBehaviour:
   instructions: "Ce composant fournit des exemples de configurations de champ scalaire.\nAjoutez
     un ScalarFieldAuthoring au m\xEAme GameObject et utilisez les valeurs d'exemple
     ci-dessous."
-  minValue: -1
-  maxValue: 1
-  sphereRadius: 0.168
+  minValue: -127
+  maxValue: 127
+  sphereRadius: 0.441
+--- !u!114 &1064507497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1064507493}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3189527dc398489ab3e88e417c896d0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DualContouringMaterialAuthoring
+  Material: {fileID: 2100000, guid: 5bc7c96a8edfca343954857894b0c393, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
