@@ -16,65 +16,19 @@ public class ScalarFieldAuthoring : MonoBehaviour
     [Tooltip("Taille de la grille (nombre de points dans chaque dimension)")]
     public int3 GridSize = new int3(3, 3, 3);
     public sbyte[] Values;
-
     [Header("Visualization")]
-    public bool ShowGizmos = true;
-    public float GizmoSize = 0.1f;
     public int3 SelectedCell = new int3(0, 0, 0);
 
     private void OnDrawGizmos()
     {
-        if (!ShowGizmos)
-        {
-            return;
-        }
-
-        // Visualiser les valeurs du champ scalaire
-        int index = 0;
-        for (int y = 0; y < GridSize.y; y++)
-        {
-            for (int z = 0; z < GridSize.z; z++)
-            {
-                for (int x = 0; x < GridSize.x; x++)
-                {
-                    float3 position = Origin + new float3(x, y, z) * CellSize;
-                    float value = Values != null && index < Values.Length ? Values[index] : 0f;
-
-                    // < 0 = noir, 0 = rouge, sbyte.MaxValue (127) = vert
-                    Color color;
-                    if (value < 0)
-                    {
-                        color = Color.black;
-                    }
-                    else
-                    {
-                        // Normaliser de [0, sbyte.MaxValue] vers [0, 1]
-                        float t = value / sbyte.MaxValue;
-                        // Lerp entre rouge (0) et vert (sbyte.MaxValue)
-                        color = Color.Lerp(Color.red, Color.green, t);
-                    }
-
-                    Gizmos.color = color;
-                    Gizmos.DrawSphere(position, GizmoSize);
-
-                    // Afficher l'index en texte
-#if UNITY_EDITOR
-                    // Calculer un offset qui s'adapte à la distance de la caméra
-                    Vector3 worldPos = position;
-                    Vector3 offset = Vector3.up * (HandleUtility.GetHandleSize(worldPos) * 0.3f);
-                    Handles.Label(worldPos + offset, index.ToString());
-#endif
-
-                    index++;
-                }
-            }
-        }
-
-        // Visualiser les cellules de dual contouring pendant le jeu
+        // Visualiser les valeurs du champ scalaire et les cellules pendant le jeu
         if (Application.isPlaying && World.DefaultGameObjectInjectionWorld != null)
         {
-            var visualizationSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<DualContouringVisualizationSystem>();
-            visualizationSystem?.DrawGizmos();
+            var scalarFieldVisualizationSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<ScalarFieldVisualizationSystem>();
+            scalarFieldVisualizationSystem?.DrawGizmos();
+
+            var dualContouringVisualizationSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<DualContouringVisualizationSystem>();
+            dualContouringVisualizationSystem?.DrawGizmos();
         }
     }
 
