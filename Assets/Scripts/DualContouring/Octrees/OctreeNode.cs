@@ -6,8 +6,8 @@ namespace DualContouring.Octrees
     public struct OctreeNode : IBufferElementData
     {
         public float Value;
-        public float3 Position;
         public int ChildIndex;
+        public int3 Position;
     }
 }
 
