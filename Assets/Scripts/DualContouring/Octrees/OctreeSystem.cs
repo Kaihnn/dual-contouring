@@ -20,11 +20,13 @@ namespace DualContouring.Octrees
 
         public void OnUpdate(ref SystemState state)
         {
-            foreach ((DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, DynamicBuffer<OctreeNode> octreeBuffer, RefRO<ScalarFieldInfos> scalarFieldInfos) in SystemAPI
+            foreach ((DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, DynamicBuffer<OctreeNode> octreeBuffer, RefRO<ScalarFieldInfos> scalarFieldInfos,
+                         RefRW<OctreeNodeInfos> octreeNodeInfos) in SystemAPI
                          .Query<
                              DynamicBuffer<ScalarFieldItem>,
                              DynamicBuffer<OctreeNode>,
-                             RefRO<ScalarFieldInfos>>())
+                             RefRO<ScalarFieldInfos>,
+                             RefRW<OctreeNodeInfos>>())
             {
                 octreeBuffer.Clear();
 
@@ -35,6 +37,12 @@ namespace DualContouring.Octrees
 
                 int3 gridSize = scalarFieldInfos.ValueRO.GridSize;
                 int maxDepth = CalculateMaxDepth(gridSize);
+
+                octreeNodeInfos.ValueRW.OctreeOffset = scalarFieldInfos.ValueRO.ScalarFieldOffset;
+                octreeNodeInfos.ValueRW.MaxDepth = maxDepth;
+                octreeNodeInfos.ValueRW.MinNodeSize = scalarFieldInfos.ValueRO.CellSize;
+                octreeNodeInfos.ValueRW.MaxNodeSize = math.cmax(scalarFieldInfos.ValueRO.GridSize) * scalarFieldInfos.ValueRO.CellSize;
+
                 int3 rootMin = int3.zero;
                 int3 rootMax = scalarFieldInfos.ValueRO.GridSize;
                 int rootSize = math.max(math.cmax(gridSize), 1);
@@ -56,7 +64,7 @@ namespace DualContouring.Octrees
             int depth = 0;
             while (maxDimension > 1)
             {
-                maxDimension = maxDimension >> 1;
+                maxDimension >>= 1;
                 depth++;
             }
 

@@ -5,8 +5,8 @@ using OctreeVisualizationSystem = DualContouring.Octrees.Debug.OctreeVisualizati
 namespace DualContouring.Octrees
 {
     /// <summary>
-    /// Composant pour ajouter le buffer OctreeNode et la visualisation de l'octree.
-    /// Doit être placé sur le même GameObject que ScalarFieldAuthoring.
+    ///     Composant pour ajouter le buffer OctreeNode et la visualisation de l'octree.
+    ///     Doit être placé sur le même GameObject que ScalarFieldAuthoring.
     /// </summary>
     public class OctreeAuthoring : MonoBehaviour
     {
@@ -26,6 +26,8 @@ namespace DualContouring.Octrees
             {
                 Entity entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddBuffer<OctreeNode>(entity);
+
+                AddComponent(entity, new OctreeNodeInfos());
             }
         }
     }

@@ -27,12 +27,12 @@ namespace DualContouring.Octrees.Debug
                 return;
             }
 
-            foreach ((DynamicBuffer<OctreeNode> octreeBuffer, DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, RefRO<LocalToWorld> localToWorld, RefRO<ScalarFieldInfos> scalarFieldInfos) in SystemAPI
+            foreach ((DynamicBuffer<OctreeNode> octreeBuffer, DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, RefRO<LocalToWorld> localToWorld, RefRO<OctreeNodeInfos> octreeNodeInfos) in SystemAPI
                          .Query<
                              DynamicBuffer<OctreeNode>,
                              DynamicBuffer<ScalarFieldItem>,
                              RefRO<LocalToWorld>,
-                             RefRO<ScalarFieldInfos>>()
+                             RefRO<OctreeNodeInfos>>()
                          .WithAll<ScalarFieldSelected>())
             {
                 if (octreeBuffer.Length == 0 || scalarFieldBuffer.Length == 0)
@@ -40,18 +40,17 @@ namespace DualContouring.Octrees.Debug
                     continue;
                 }
 
-                int size = math.cmax(scalarFieldInfos.ValueRO.GridSize);
-                DrawOctreeNode(octreeBuffer, 0, size, 0, localToWorld.ValueRO, visualizationOptions);
+                DrawOctreeNode(octreeBuffer, 0, 0, localToWorld.ValueRO, visualizationOptions, octreeNodeInfos.ValueRO);
             }
         }
 
         private void DrawOctreeNode(
             DynamicBuffer<OctreeNode> octreeBuffer,
             int nodeIndex,
-            float size,
             int depth,
             LocalToWorld localToWorld,
-            OctreeVisualizationOptions options)
+            OctreeVisualizationOptions options,
+            OctreeNodeInfos octreeNodeInfos)
         {
             if (nodeIndex < 0 || nodeIndex >= octreeBuffer.Length)
             {
@@ -60,6 +59,17 @@ namespace DualContouring.Octrees.Debug
 
             OctreeNode node = octreeBuffer[nodeIndex];
             float3 position = node.Position;
+            OctreeUtils.GetSizeFromDepth(
+                octreeNodeInfos.MaxDepth,
+                depth,
+                octreeNodeInfos.MinNodeSize,
+                out float size);
+
+            OctreeUtils.GetWorldPositionFromPosition(
+                node.Position,
+                octreeNodeInfos.MinNodeSize,
+                octreeNodeInfos.OctreeOffset,
+                out float3 worldPosition);
 
             if (depth >= options.Depth.x && depth <= options.Depth.y)
             {
@@ -75,10 +85,10 @@ namespace DualContouring.Octrees.Debug
                 }
 
                 Gizmos.color = color;
-                Gizmos.DrawWireCube(position + new float3(size, size, size) / 2, new float3(size, size, size));
+                Gizmos.DrawWireCube(worldPosition + new float3(size, size, size) / 2, new float3(size, size, size));
 
                 Gizmos.color = node.Value >= 0 ? Color.green : Color.red;
-                Gizmos.DrawSphere(position, size * 0.05f);
+                Gizmos.DrawSphere(worldPosition, size * 0.05f);
 
 #if UNITY_EDITOR
                 Vector3 worldPos = position;
@@ -87,14 +97,12 @@ namespace DualContouring.Octrees.Debug
 #endif
             }
 
-            float childSize = size / 2f;
-
             if (node.ChildIndex >= 0)
             {
                 for (int i = 0; i < 8; i++)
                 {
                     int childIndex = node.ChildIndex + i;
-                    DrawOctreeNode(octreeBuffer, childIndex, childSize, depth + 1, localToWorld, options);
+                    DrawOctreeNode(octreeBuffer, childIndex, depth + 1, localToWorld, options, octreeNodeInfos);
                 }
             }
         }

@@ -81,7 +81,6 @@ namespace DualContouring.DualContouring
                 {
                     ScalarFieldItem value = scalarField[scalarIndex];
 
-
                     // Si la valeur est positive (à l'intérieur de la surface), mettre le bit à 1
                     if (value.Value >= 0)
                     {
@@ -412,9 +411,6 @@ namespace DualContouring.DualContouring
             return result;
         }
 
-        /// <summary>
-        ///     Essaie de trouver l'intersection entre une arête et la surface (iso-surface à 0)
-        /// </summary>
         private bool TryGetEdgeIntersection(
             DynamicBuffer<ScalarFieldItem> scalarField,
             int3 corner1Index,
@@ -426,7 +422,7 @@ namespace DualContouring.DualContouring
             int3 gridSize = scalarFieldInfos.GridSize;
             float cellSize = scalarFieldInfos.CellSize;
             float3 scalarFieldOffset = scalarFieldInfos.ScalarFieldOffset;
-            
+
             intersection = float3.zero;
             normal = float3.zero;
 
@@ -465,7 +461,7 @@ namespace DualContouring.DualContouring
         private float3 CalculateNormal(DynamicBuffer<ScalarFieldItem> scalarField, float3 position, ScalarFieldInfos scalarFieldInfos)
         {
             float cellSize = scalarFieldInfos.CellSize;
-            
+
             // Utiliser un epsilon proportionnel à la taille de cellule
             float epsilon = cellSize * 0.1f;
 
