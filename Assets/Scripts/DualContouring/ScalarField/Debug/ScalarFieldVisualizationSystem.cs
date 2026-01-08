@@ -29,24 +29,24 @@ namespace DualContouring.ScalarField.Debug
                 return;
             }
 
-            foreach ((DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, RefRO<ScalarFieldGridSize> gridSize, RefRO<LocalToWorld> localToWorld) in SystemAPI.Query<
+            foreach ((DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, RefRO<ScalarFieldInfos> scalarFieldInfos, RefRO<LocalToWorld> localToWorld) in SystemAPI.Query<
                              DynamicBuffer<ScalarFieldItem>,
-                             RefRO<ScalarFieldGridSize>,
+                             RefRO<ScalarFieldInfos>,
                              RefRO<LocalToWorld>>()
                          .WithAll<ScalarFieldSelected>())
             {
-                DrawScalarFieldValues(scalarFieldBuffer, gridSize.ValueRO, localToWorld.ValueRO);
+                DrawScalarFieldValues(scalarFieldBuffer, scalarFieldInfos.ValueRO, localToWorld.ValueRO);
             }
         }
 
-        private void DrawScalarFieldValues(DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, ScalarFieldGridSize gridSize, LocalToWorld localToWorld)
+        private void DrawScalarFieldValues(DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, ScalarFieldInfos infos, LocalToWorld localToWorld)
         {
             int index = 0;
-            for (int y = 0; y < gridSize.Value.y; y++)
+            for (int y = 0; y < infos.GridSize.y; y++)
             {
-                for (int z = 0; z < gridSize.Value.z; z++)
+                for (int z = 0; z < infos.GridSize.z; z++)
                 {
-                    for (int x = 0; x < gridSize.Value.x; x++)
+                    for (int x = 0; x < infos.GridSize.x; x++)
                     {
                         if (index >= scalarFieldBuffer.Length)
                         {

@@ -16,17 +16,15 @@ namespace DualContouring.Octrees
         {
             state.RequireForUpdate<ScalarFieldItem>();
             state.RequireForUpdate<OctreeNode>();
-            state.RequireForUpdate<ScalarFieldOrigin>();
         }
 
         public void OnUpdate(ref SystemState state)
         {
-            foreach ((DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, DynamicBuffer<OctreeNode> octreeBuffer, RefRO<ScalarFieldGridSize> gridSize, RefRO<ScalarFieldOrigin> origin) in SystemAPI
+            foreach ((DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, DynamicBuffer<OctreeNode> octreeBuffer, RefRO<ScalarFieldInfos> scalarFieldInfos) in SystemAPI
                          .Query<
                              DynamicBuffer<ScalarFieldItem>,
                              DynamicBuffer<OctreeNode>,
-                             RefRO<ScalarFieldGridSize>,
-                             RefRO<ScalarFieldOrigin>>())
+                             RefRO<ScalarFieldInfos>>())
             {
                 octreeBuffer.Clear();
 
@@ -35,11 +33,11 @@ namespace DualContouring.Octrees
                     continue;
                 }
 
-                int3 gridSizeValue = gridSize.ValueRO.Value;
-                int maxDepth = CalculateMaxDepth(gridSizeValue);
+                int3 gridSize = scalarFieldInfos.ValueRO.GridSize;
+                int maxDepth = CalculateMaxDepth(gridSize);
                 int3 rootMin = int3.zero;
-                int3 rootMax = gridSize.ValueRO.Value;
-                int rootSize = math.max(math.cmax(gridSizeValue), 1);
+                int3 rootMax = scalarFieldInfos.ValueRO.GridSize;
+                int rootSize = math.max(math.cmax(gridSize), 1);
 
                 octreeBuffer.Add(new OctreeNode
                 {
@@ -48,7 +46,7 @@ namespace DualContouring.Octrees
                     ChildIndex = -1
                 });
 
-                SubdivideNode(octreeBuffer, scalarFieldBuffer, gridSizeValue, 0, rootMin, rootMax, rootSize, 0, maxDepth);
+                SubdivideNode(octreeBuffer, scalarFieldBuffer, gridSize, 0, rootMin, rootMax, rootSize, 0, maxDepth);
             }
         }
 

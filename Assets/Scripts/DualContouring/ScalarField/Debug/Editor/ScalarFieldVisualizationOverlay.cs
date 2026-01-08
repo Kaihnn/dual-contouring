@@ -215,7 +215,7 @@ namespace DualContouring.ScalarField.Debug.Editor
             }
 
             EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-            EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldGridSize));
+            EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldInfos));
             NativeArray<Entity> entities = query.ToEntityArray(Allocator.Temp);
 
             // Mettre à jour le header avec le compte
@@ -293,7 +293,7 @@ namespace DualContouring.ScalarField.Debug.Editor
             }
 
             EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-            EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldGridSize), typeof(ScalarFieldSelected));
+            EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldInfos), typeof(ScalarFieldSelected));
             NativeArray<Entity> selectedEntities = query.ToEntityArray(Allocator.Temp);
 
             if (selectedEntities.Length == 0)
@@ -313,19 +313,19 @@ namespace DualContouring.ScalarField.Debug.Editor
             _selectedTitleLabel.text = $"Selected: Scalar Field {selectedEntity.Index}";
 
             // Récupérer la GridSize pour mettre à jour les limites des sliders
-            if (entityManager.HasComponent<ScalarFieldGridSize>(selectedEntity))
+            if (entityManager.HasComponent<ScalarFieldInfos>(selectedEntity))
             {
-                var gridSize = entityManager.GetComponentData<ScalarFieldGridSize>(selectedEntity);
+                var scalarFieldInfos = entityManager.GetComponentData<ScalarFieldInfos>(selectedEntity);
 
                 // Mettre à jour les limites des sliders (0 à GridSize - 1)
                 _selectedCellXField.lowValue = 0;
-                _selectedCellXField.highValue = Mathf.Max(0, gridSize.Value.x - 1);
+                _selectedCellXField.highValue = Mathf.Max(0, scalarFieldInfos.GridSize.x - 1);
 
                 _selectedCellYField.lowValue = 0;
-                _selectedCellYField.highValue = Mathf.Max(0, gridSize.Value.y - 1);
+                _selectedCellYField.highValue = Mathf.Max(0, scalarFieldInfos.GridSize.y - 1);
 
                 _selectedCellZField.lowValue = 0;
-                _selectedCellZField.highValue = Mathf.Max(0, gridSize.Value.z - 1);
+                _selectedCellZField.highValue = Mathf.Max(0, scalarFieldInfos.GridSize.z - 1);
             }
 
             // Récupérer et afficher la Selected Cell
@@ -348,7 +348,7 @@ namespace DualContouring.ScalarField.Debug.Editor
             }
 
             EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-            EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldGridSize), typeof(ScalarFieldSelected));
+            EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldInfos), typeof(ScalarFieldSelected));
             NativeArray<Entity> selectedEntities = query.ToEntityArray(Allocator.Temp);
 
             if (selectedEntities.Length == 0)
@@ -406,7 +406,7 @@ namespace DualContouring.ScalarField.Debug.Editor
             bool wasSelected = entityManager.HasComponent<ScalarFieldSelected>(entity);
 
             // Désélectionner TOUS les Scalar Fields
-            EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldGridSize));
+            EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldInfos));
             NativeArray<Entity> allEntities = query.ToEntityArray(Allocator.Temp);
 
             foreach (Entity e in allEntities)

@@ -28,12 +28,12 @@ namespace DualContouring.DualContouring.Debug
             }
 
             foreach ((DynamicBuffer<DualContouringCell> cellBuffer, DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer,
-                         RefRO<SelectedCell> selectedCell, RefRO<ScalarFieldGridSize> gridSize, RefRO<LocalToWorld> localToWorld) in SystemAPI
+                         RefRO<SelectedCell> selectedCell, RefRO<ScalarFieldInfos> scalarFieldInfos, RefRO<LocalToWorld> localToWorld) in SystemAPI
                          .Query<DynamicBuffer<DualContouringCell>, DynamicBuffer<DualContouringEdgeIntersection>, RefRO<SelectedCell>,
-                             RefRO<ScalarFieldGridSize>, RefRO<LocalToWorld>>().WithAll<ScalarFieldSelected>())
+                             RefRO<ScalarFieldInfos>, RefRO<LocalToWorld>>().WithAll<ScalarFieldSelected>())
             {
                 // Calculer l'index de la cellule sélectionnée
-                int3 cellGridSize = gridSize.ValueRO.Value - new int3(1, 1, 1);
+                int3 cellGridSize = scalarFieldInfos.ValueRO.GridSize - new int3(1, 1, 1);
                 int selectedIndex = ScalarFieldUtility.CoordToIndex(selectedCell.ValueRO.Value, cellGridSize);
 
                 // Si l'index est invalide, dessiner toutes les cellules

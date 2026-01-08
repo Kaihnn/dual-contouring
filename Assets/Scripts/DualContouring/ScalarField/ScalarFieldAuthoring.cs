@@ -47,15 +47,10 @@ namespace DualContouring.ScalarField
                         Value = int3.zero
                     });
                 AddComponent(entity,
-                    new ScalarFieldGridSize
+                    new ScalarFieldInfos
                     {
-                        Value = authoring.GridSize,
-                    });
-                AddComponent(entity,
-                    new ScalarFieldOrigin
-                    {
-                        Origin = authoring.Origin,
-                        CellSize = authoring.CellSize
+                        GridSize = authoring.GridSize,
+                        CellSize = authoring.CellSize,
                     });
 
                 AddBuffer<DualContouringCell>(entity);
