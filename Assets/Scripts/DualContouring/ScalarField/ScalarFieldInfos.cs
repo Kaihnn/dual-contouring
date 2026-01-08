@@ -7,5 +7,6 @@ namespace DualContouring.ScalarField
     {
         public int3 GridSize;
         public float CellSize;
+        public float3 ScalarFieldOffset;
     }
 }

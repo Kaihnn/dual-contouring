@@ -41,7 +41,7 @@ namespace DualContouring.DualContouring
                     {
                         for (int x = 0; x < cellGridSize.x; x++)
                         {
-                            ProcessCell(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, new int3(x, y, z), scalarFieldInfos.ValueRO.GridSize);
+                            ProcessCell(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, new int3(x, y, z), scalarFieldInfos.ValueRO);
                         }
                     }
                 }
@@ -56,12 +56,11 @@ namespace DualContouring.DualContouring
             DynamicBuffer<DualContouringCell> cells,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             int3 cellIndex,
-            int3 gridSize)
+            ScalarFieldInfos scalarFieldInfos)
         {
-            // Récupérer les 8 coins de la cellule
-            float3 corner0Pos = float3.zero;
-            float cellSize = 0;
-            bool firstCorner = true;
+            int3 gridSize = scalarFieldInfos.GridSize;
+            float cellSize = scalarFieldInfos.CellSize;
+            float3 scalarFieldOffset = scalarFieldInfos.ScalarFieldOffset;
 
             // Calculer l'index de configuration (8 bits, un par coin)
             int config = 0;
@@ -82,16 +81,6 @@ namespace DualContouring.DualContouring
                 {
                     ScalarFieldItem value = scalarField[scalarIndex];
 
-                    if (firstCorner)
-                    {
-                        corner0Pos = value.Position;
-                        firstCorner = false;
-                    }
-                    else if (cellSize == 0)
-                    {
-                        // Calculer la taille de cellule à partir de la distance entre coins
-                        cellSize = math.distance(corner0Pos, value.Position);
-                    }
 
                     // Si la valeur est positive (à l'intérieur de la surface), mettre le bit à 1
                     if (value.Value >= 0)
@@ -105,8 +94,7 @@ namespace DualContouring.DualContouring
             bool hasVertex = config != 0 && config != 255;
 
             // Calculer la position du vertex (pour l'instant, on utilise le centre de la cellule)
-            // Dans un vrai dual contouring, on utiliserait QEF (Quadratic Error Function)
-            float3 cellPosition = corner0Pos;
+            ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellPosition);
             float3 vertexPosition = cellPosition + new float3(0.5f, 0.5f, 0.5f) * cellSize;
             var cellNormal = new float3(0, 1, 0);
 
@@ -116,8 +104,7 @@ namespace DualContouring.DualContouring
                 CalculateVertexPositionAndNormal(scalarField,
                     edgeIntersections,
                     cellIndex,
-                    cellSize,
-                    gridSize,
+                    scalarFieldInfos,
                     out vertexPosition,
                     out cellNormal);
             }
@@ -141,11 +128,13 @@ namespace DualContouring.DualContouring
             DynamicBuffer<ScalarFieldItem> scalarField,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             int3 cellIndex,
-            float cellSize,
-            int3 gridSize,
+            ScalarFieldInfos scalarFieldInfos,
             out float3 vertexPosition,
             out float3 cellNormal)
         {
+            int3 gridSize = scalarFieldInfos.GridSize;
+            float cellSize = scalarFieldInfos.CellSize;
+            float3 scalarFieldOffset = scalarFieldInfos.ScalarFieldOffset;
             // Valeurs par défaut
             vertexPosition = float3.zero;
             cellNormal = new float3(0, 1, 0);
@@ -173,7 +162,7 @@ namespace DualContouring.DualContouring
                             cellIndex + new int3(1, y, z),
                             out float3 intersection,
                             out float3 normal,
-                            gridSize))
+                            scalarFieldInfos))
                     {
                         positions[count] = intersection;
                         normals[count] = normal;
@@ -201,7 +190,7 @@ namespace DualContouring.DualContouring
                             cellIndex + new int3(x, 1, z),
                             out float3 intersection,
                             out float3 normal,
-                            gridSize))
+                            scalarFieldInfos))
                     {
                         positions[count] = intersection;
                         normals[count] = normal;
@@ -229,7 +218,7 @@ namespace DualContouring.DualContouring
                             cellIndex + new int3(x, y, 1),
                             out float3 intersection,
                             out float3 normal,
-                            gridSize))
+                            scalarFieldInfos))
                     {
                         positions[count] = intersection;
                         normals[count] = normal;
@@ -265,7 +254,7 @@ namespace DualContouring.DualContouring
                 int scalarIndex = ScalarFieldUtility.CoordToIndex(cellIndex, gridSize);
                 if (scalarIndex >= 0 && scalarIndex < scalarField.Length)
                 {
-                    float3 cellMin = scalarField[scalarIndex].Position;
+                    ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellMin);
                     float3 cellMax = cellMin + new float3(cellSize, cellSize, cellSize);
                     vertexPos = math.clamp(vertexPos, cellMin, cellMax);
                 }
@@ -287,7 +276,8 @@ namespace DualContouring.DualContouring
             int fallbackIndex = ScalarFieldUtility.CoordToIndex(cellIndex, gridSize);
             if (fallbackIndex >= 0 && fallbackIndex < scalarField.Length)
             {
-                vertexPosition = scalarField[fallbackIndex].Position + new float3(0.5f, 0.5f, 0.5f) * cellSize;
+                ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellMin);
+                vertexPosition = cellMin + new float3(0.5f, 0.5f, 0.5f) * cellSize;
             }
         }
 
@@ -431,8 +421,12 @@ namespace DualContouring.DualContouring
             int3 corner2Index,
             out float3 intersection,
             out float3 normal,
-            int3 gridSize)
+            ScalarFieldInfos scalarFieldInfos)
         {
+            int3 gridSize = scalarFieldInfos.GridSize;
+            float cellSize = scalarFieldInfos.CellSize;
+            float3 scalarFieldOffset = scalarFieldInfos.ScalarFieldOffset;
+            
             intersection = float3.zero;
             normal = float3.zero;
 
@@ -452,10 +446,12 @@ namespace DualContouring.DualContouring
             {
                 // Interpolation linéaire pour trouver le point d'intersection
                 float t = math.abs(v1.Value) / (math.abs(v1.Value) + math.abs(v2.Value));
-                intersection = math.lerp(v1.Position, v2.Position, t);
+                ScalarFieldUtility.GetWorldPosition(corner1Index, cellSize, scalarFieldOffset, out float3 pos1);
+                ScalarFieldUtility.GetWorldPosition(corner2Index, cellSize, scalarFieldOffset, out float3 pos2);
+                intersection = math.lerp(pos1, pos2, t);
 
                 // Calculer la normale en utilisant le gradient (approximation par différence finie)
-                normal = CalculateNormal(scalarField, intersection, gridSize);
+                normal = CalculateNormal(scalarField, intersection, scalarFieldInfos);
 
                 return true;
             }
@@ -466,44 +462,26 @@ namespace DualContouring.DualContouring
         /// <summary>
         ///     Calcule la normale au point d'intersection en utilisant le gradient du champ scalaire
         /// </summary>
-        private float3 CalculateNormal(DynamicBuffer<ScalarFieldItem> scalarField, float3 position, int3 gridSize)
+        private float3 CalculateNormal(DynamicBuffer<ScalarFieldItem> scalarField, float3 position, ScalarFieldInfos scalarFieldInfos)
         {
-            // Pour calculer la normale, on utilise le gradient du champ scalaire
-            // La normale est le gradient normalisé
-            // On utilise une différence finie centrée pour approximer le gradient
-
-            // Déterminer la taille de cellule pour adapter epsilon
-            float cellSize = 1.0f;
-            if (scalarField.Length > 1)
-            {
-                float3 origin = scalarField[0].Position;
-                for (int i = 1; i < scalarField.Length; i++)
-                {
-                    float dist = math.distance(origin, scalarField[i].Position);
-                    if (dist > 0.0001f)
-                    {
-                        cellSize = dist;
-                        break;
-                    }
-                }
-            }
-
+            float cellSize = scalarFieldInfos.CellSize;
+            
             // Utiliser un epsilon proportionnel à la taille de cellule
             float epsilon = cellSize * 0.1f;
 
             // Gradient en X
-            float valueXPlus = SampleScalarField(scalarField, position + new float3(epsilon, 0, 0), gridSize);
-            float valueXMinus = SampleScalarField(scalarField, position - new float3(epsilon, 0, 0), gridSize);
+            float valueXPlus = SampleScalarField(scalarField, position + new float3(epsilon, 0, 0), scalarFieldInfos);
+            float valueXMinus = SampleScalarField(scalarField, position - new float3(epsilon, 0, 0), scalarFieldInfos);
             float gradX = (valueXPlus - valueXMinus) / (2.0f * epsilon);
 
             // Gradient en Y
-            float valueYPlus = SampleScalarField(scalarField, position + new float3(0, epsilon, 0), gridSize);
-            float valueYMinus = SampleScalarField(scalarField, position - new float3(0, epsilon, 0), gridSize);
+            float valueYPlus = SampleScalarField(scalarField, position + new float3(0, epsilon, 0), scalarFieldInfos);
+            float valueYMinus = SampleScalarField(scalarField, position - new float3(0, epsilon, 0), scalarFieldInfos);
             float gradY = (valueYPlus - valueYMinus) / (2.0f * epsilon);
 
             // Gradient en Z
-            float valueZPlus = SampleScalarField(scalarField, position + new float3(0, 0, epsilon), gridSize);
-            float valueZMinus = SampleScalarField(scalarField, position - new float3(0, 0, epsilon), gridSize);
+            float valueZPlus = SampleScalarField(scalarField, position + new float3(0, 0, epsilon), scalarFieldInfos);
+            float valueZMinus = SampleScalarField(scalarField, position - new float3(0, 0, epsilon), scalarFieldInfos);
             float gradZ = (valueZPlus - valueZMinus) / (2.0f * epsilon);
 
             var gradient = new float3(gradX, gradY, gradZ);
@@ -522,35 +500,19 @@ namespace DualContouring.DualContouring
         /// <summary>
         ///     Échantillonne le champ scalaire à une position donnée (interpolation trilinéaire)
         /// </summary>
-        private float SampleScalarField(DynamicBuffer<ScalarFieldItem> scalarField, float3 position, int3 gridSize)
+        private float SampleScalarField(DynamicBuffer<ScalarFieldItem> scalarField, float3 position, ScalarFieldInfos scalarFieldInfos)
         {
-            // Trouver la cellule qui contient la position
-            // On suppose que la grille commence à l'origine du premier point
             if (scalarField.Length == 0)
             {
                 return 0;
             }
 
-            float3 origin = scalarField[0].Position;
-
-            // Calculer la taille de cellule (distance entre deux points adjacents)
-            float cellSize = 1.0f;
-            if (scalarField.Length > 1)
-            {
-                // Trouver le premier voisin différent
-                for (int i = 1; i < scalarField.Length; i++)
-                {
-                    float dist = math.distance(origin, scalarField[i].Position);
-                    if (dist > 0.0001f)
-                    {
-                        cellSize = dist;
-                        break;
-                    }
-                }
-            }
+            int3 gridSize = scalarFieldInfos.GridSize;
+            float cellSize = scalarFieldInfos.CellSize;
+            float3 scalarFieldOffset = scalarFieldInfos.ScalarFieldOffset;
 
             // Convertir la position en coordonnées de grille (flottantes)
-            float3 gridPos = (position - origin) / cellSize;
+            float3 gridPos = (position - scalarFieldOffset) / cellSize;
 
             // Trouver la cellule de base (coin inférieur)
             var baseCell = new int3(

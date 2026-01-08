@@ -51,6 +51,7 @@ namespace DualContouring.ScalarField
                     {
                         GridSize = authoring.GridSize,
                         CellSize = authoring.CellSize,
+                        ScalarFieldOffset = authoring.Origin,
                     });
 
                 AddBuffer<DualContouringCell>(entity);
@@ -67,9 +68,8 @@ namespace DualContouring.ScalarField
                     {
                         for (int x = 0; x < authoring.GridSize.x; x++)
                         {
-                            float3 position = authoring.Origin + new float3(x, y, z) * authoring.CellSize;
                             float value = authoring.Values != null && index < authoring.Values.Length ? authoring.Values[index] : 0f;
-                            buffer.Add(new ScalarFieldItem { Position = position, Value = value });
+                            buffer.Add(new ScalarFieldItem { Value = value });
                             index++;
                         }
                     }

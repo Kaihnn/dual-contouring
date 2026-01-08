@@ -54,7 +54,8 @@ namespace DualContouring.ScalarField.Debug
                         }
 
                         ScalarFieldItem scalarValue = scalarFieldBuffer[index];
-                        float3 position = math.transform(localToWorld.Value, scalarValue.Position);
+                        ScalarFieldUtility.GetWorldPosition(new int3(x, y, z), infos.CellSize, infos.ScalarFieldOffset, out float3 localPosition);
+                        float3 position = math.transform(localToWorld.Value, localPosition);
                         float value = scalarValue.Value;
 
                         // < 0 = noir, 0 = rouge, sbyte.MaxValue (127) = vert
