@@ -65,9 +65,6 @@ namespace DualContouring.Octrees
             return depth;
         }
 
-        /// <summary>
-        ///     Subdivise récursivement un nœud de l'octree
-        /// </summary>
         private void SubdivideNode(
             DynamicBuffer<OctreeNode> octreeBuffer,
             DynamicBuffer<ScalarFieldItem> scalarField,
@@ -95,6 +92,28 @@ namespace DualContouring.Octrees
             parentNode.ChildIndex = firstChildIndex;
             octreeBuffer[nodeIndex] = parentNode;
 
+            // Créer d'abord les 8 enfants
+            for (int x = 0; x <= 1; x++)
+            {
+                for (int y = 0; y <= 1; y++)
+                {
+                    for (int z = 0; z <= 1; z++)
+                    {
+                        int childSize = size / 2;
+                        int3 childMin = min + new int3(x * childSize, y * childSize, z * childSize);
+                        int3 childMax = childMin + new int3(childSize, childSize, childSize);
+
+                        octreeBuffer.Add(new OctreeNode
+                        {
+                            Position = childMin,
+                            Value = 0f,
+                            ChildIndex = -1
+                        });
+                    }
+                }
+            }
+
+            // Ensuite subdiviser récursivement chaque enfant
             int i = 0;
             for (int x = 0; x <= 1; x++)
             {
@@ -104,16 +123,8 @@ namespace DualContouring.Octrees
                     {
                         int childSize = size / 2;
                         int3 childMin = min + new int3(x * childSize, y * childSize, z * childSize);
-                        int3 childMax = min + new int3(childSize, childSize, childSize);
+                        int3 childMax = childMin + new int3(childSize, childSize, childSize);
 
-                        octreeBuffer.Add(new OctreeNode
-                        {
-                            Position = childMax,
-                            Value = 0f,
-                            ChildIndex = -1
-                        });
-
-                        // Subdiviser récursivement l'enfant
                         SubdivideNode(octreeBuffer, scalarField, gridSize, firstChildIndex + i, childMin, childMax, childSize, depth + 1, maxDepth);
                         i++;
                     }
