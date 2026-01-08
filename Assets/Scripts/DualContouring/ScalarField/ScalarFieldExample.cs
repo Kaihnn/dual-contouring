@@ -43,7 +43,7 @@ namespace DualContouring.ScalarField
             var authoring = GetComponent<ScalarFieldAuthoring>();
             if (authoring == null)
             {
-                Debug.LogError("Aucun ScalarFieldAuthoring trouvé sur ce GameObject!");
+                UnityEngine.Debug.LogError("Aucun ScalarFieldAuthoring trouvé sur ce GameObject!");
                 return;
             }
 
@@ -90,8 +90,8 @@ namespace DualContouring.ScalarField
                 }
             }
 
-            Debug.Log($"Sphère procédurale générée pour une grille {authoring.GridSize.x}x{authoring.GridSize.y}x{authoring.GridSize.z} " +
-                      $"avec rayon={radius:F2} unités, valeurs=[{minValue}, {maxValue}]");
+            UnityEngine.Debug.Log($"Sphère procédurale générée pour une grille {authoring.GridSize.x}x{authoring.GridSize.y}x{authoring.GridSize.z} " +
+                                  $"avec rayon={radius:F2} unités, valeurs=[{minValue}, {maxValue}]");
 
 #if UNITY_EDITOR
             EditorUtility.SetDirty(authoring);
@@ -104,7 +104,7 @@ namespace DualContouring.ScalarField
             var authoring = GetComponent<ScalarFieldAuthoring>();
             if (authoring == null)
             {
-                Debug.LogError("Aucun ScalarFieldAuthoring trouvé sur ce GameObject!");
+                UnityEngine.Debug.LogError("Aucun ScalarFieldAuthoring trouvé sur ce GameObject!");
                 return;
             }
 
@@ -148,8 +148,8 @@ namespace DualContouring.ScalarField
                 }
             }
 
-            Debug.Log($"Cube procédural généré pour une grille {authoring.GridSize.x}x{authoring.GridSize.y}x{authoring.GridSize.z} " +
-                      $"avec demi-taille={halfSize:F2} unités, valeurs=[{minValue}, {maxValue}]");
+            UnityEngine.Debug.Log($"Cube procédural généré pour une grille {authoring.GridSize.x}x{authoring.GridSize.y}x{authoring.GridSize.z} " +
+                                  $"avec demi-taille={halfSize:F2} unités, valeurs=[{minValue}, {maxValue}]");
 
 #if UNITY_EDITOR
             EditorUtility.SetDirty(authoring);
@@ -162,7 +162,7 @@ namespace DualContouring.ScalarField
             var authoring = GetComponent<ScalarFieldAuthoring>();
             if (authoring == null)
             {
-                Debug.LogError("Aucun ScalarFieldAuthoring trouvé sur ce GameObject!");
+                UnityEngine.Debug.LogError("Aucun ScalarFieldAuthoring trouvé sur ce GameObject!");
                 return;
             }
 
@@ -197,8 +197,8 @@ namespace DualContouring.ScalarField
                 }
             }
 
-            Debug.Log($"Plan horizontal procédural généré pour une grille {authoring.GridSize.x}x{authoring.GridSize.y}x{authoring.GridSize.z} " +
-                      $"à Y={planeY:F2}, valeurs=[{minValue}, {maxValue}]");
+            UnityEngine.Debug.Log($"Plan horizontal procédural généré pour une grille {authoring.GridSize.x}x{authoring.GridSize.y}x{authoring.GridSize.z} " +
+                                  $"à Y={planeY:F2}, valeurs=[{minValue}, {maxValue}]");
 
 #if UNITY_EDITOR
             EditorUtility.SetDirty(authoring);
@@ -211,7 +211,7 @@ namespace DualContouring.ScalarField
             var authoring = GetComponent<ScalarFieldAuthoring>();
             if (authoring == null)
             {
-                Debug.LogError("Aucun ScalarFieldAuthoring trouvé sur ce GameObject!");
+                UnityEngine.Debug.LogError("Aucun ScalarFieldAuthoring trouvé sur ce GameObject!");
                 return;
             }
 
@@ -259,8 +259,8 @@ namespace DualContouring.ScalarField
                 }
             }
 
-            Debug.Log($"Tore procédural généré pour une grille {authoring.GridSize.x}x{authoring.GridSize.y}x{authoring.GridSize.z} " +
-                      $"avec rayons={majorRadius:F2}/{minorRadius:F2}, valeurs=[{minValue}, {maxValue}]");
+            UnityEngine.Debug.Log($"Tore procédural généré pour une grille {authoring.GridSize.x}x{authoring.GridSize.y}x{authoring.GridSize.z} " +
+                                  $"avec rayons={majorRadius:F2}/{minorRadius:F2}, valeurs=[{minValue}, {maxValue}]");
 
 #if UNITY_EDITOR
             EditorUtility.SetDirty(authoring);

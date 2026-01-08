@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace DualContouring.Debugs
+namespace DualContouring.ScalarField.Debug
 {
     /// <summary>
     ///     Tag component pour marquer un scalar field comme sélectionné

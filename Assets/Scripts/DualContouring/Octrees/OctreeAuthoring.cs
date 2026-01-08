@@ -1,6 +1,6 @@
-using DualContouring.Debugs;
 using Unity.Entities;
 using UnityEngine;
+using OctreeVisualizationSystem = DualContouring.Octrees.Debug.OctreeVisualizationSystem;
 
 namespace DualContouring.Octrees
 {

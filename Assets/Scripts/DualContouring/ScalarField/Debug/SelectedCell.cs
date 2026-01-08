@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace DualContouring.Debugs
+namespace DualContouring.ScalarField.Debug
 {
     /// <summary>
     ///     Composant pour stocker la cellule sélectionnée

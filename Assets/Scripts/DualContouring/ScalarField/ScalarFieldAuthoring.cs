@@ -1,10 +1,12 @@
-using DualContouring.Debugs;
 using DualContouring.DualContouring;
 using DualContouring.MeshGeneration;
+using DualContouring.ScalarField.Debug;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
+using DualContouringVisualizationSystem = DualContouring.DualContouring.Debug.DualContouringVisualizationSystem;
+using ScalarFieldVisualizationSystem = DualContouring.ScalarField.Debug.ScalarFieldVisualizationSystem;
 
 namespace DualContouring.ScalarField
 {
@@ -26,7 +28,7 @@ namespace DualContouring.ScalarField
             // Visualiser les valeurs du champ scalaire et les cellules pendant le jeu
             if (Application.isPlaying && World.DefaultGameObjectInjectionWorld != null)
             {
-                var scalarFieldVisualizationSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<Debugs.ScalarFieldVisualizationSystem>();
+                var scalarFieldVisualizationSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<ScalarFieldVisualizationSystem>();
                 scalarFieldVisualizationSystem?.DrawGizmos();
 
                 var dualContouringVisualizationSystem = World.DefaultGameObjectInjectionWorld.GetExistingSystemManaged<DualContouringVisualizationSystem>();

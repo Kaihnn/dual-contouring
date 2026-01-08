@@ -1,31 +1,27 @@
 using System.Collections.Generic;
-using DualContouring.Debugs;
-using DualContouring.ScalarField;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEditor;
 using UnityEditor.Overlays;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace DualContouring.Editor
+namespace DualContouring.ScalarField.Debug.Editor
 {
-    /// <summary>
-    /// Overlay qui affiche la liste des entités avec ScalarField dans la SceneView
-    /// Compatible Unity 2021.2+
-    /// </summary>
-    [Overlay(typeof(SceneView), "Scalar Field Debug")]
-    public class ScalarFieldDebugOverlay : Overlay
+    [Overlay(typeof(SceneView), "Scalar Field Visualization")]
+    public class ScalarFieldVisualizationOverlay : Overlay
     {
+        private readonly Dictionary<Entity, Button> _entityButtons = new Dictionary<Entity, Button>();
+        private Label _headerLabel;
         private VisualElement _root;
         private ScrollView _scrollView;
-        private Label _headerLabel;
-        private Dictionary<Entity, Button> _entityButtons = new Dictionary<Entity, Button>();
-        private VisualElement _selectedPanel;
-        private Label _selectedTitleLabel;
         private SliderInt _selectedCellXField;
         private SliderInt _selectedCellYField;
         private SliderInt _selectedCellZField;
+        private VisualElement _selectedPanel;
+        private Label _selectedTitleLabel;
+        private Toggle _visualizationToggle;
 
         public override VisualElement CreatePanelContent()
         {
@@ -76,6 +72,14 @@ namespace DualContouring.Editor
             _selectedPanel.style.borderTopLeftRadius = 3;
             _selectedPanel.style.borderTopRightRadius = 3;
             _selectedPanel.style.display = DisplayStyle.None; // Caché par défaut
+
+            // Toggle pour la visualisation
+            _visualizationToggle = new Toggle("Enable Visualization");
+            _visualizationToggle.style.color = Color.white;
+            _visualizationToggle.style.fontSize = 11;
+            _visualizationToggle.style.marginBottom = 5;
+            _visualizationToggle.RegisterValueChangedCallback(evt => OnVisualizationToggleChanged(evt.newValue));
+            _root.Add(_visualizationToggle);
 
             _selectedTitleLabel = new Label("Selected Scalar Field");
             _selectedTitleLabel.style.fontSize = 12;
@@ -174,18 +178,21 @@ namespace DualContouring.Editor
         private void RefreshEntityList()
         {
             if (_scrollView == null)
+            {
                 return;
+            }
 
             // Nettoyer tous les labels informatifs (non-boutons)
-            var childrenToRemove = new List<VisualElement>();
-            foreach (var child in _scrollView.Children())
+            List<VisualElement> childrenToRemove = new List<VisualElement>();
+            foreach (VisualElement child in _scrollView.Children())
             {
                 if (child is Label)
                 {
                     childrenToRemove.Add(child);
                 }
             }
-            foreach (var child in childrenToRemove)
+
+            foreach (VisualElement child in childrenToRemove)
             {
                 _scrollView.Remove(child);
             }
@@ -197,11 +204,13 @@ namespace DualContouring.Editor
                 noDataLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
                 noDataLabel.style.marginTop = 10;
                 _scrollView.Add(noDataLabel);
-                
+
                 // Cacher le panel de sélection
                 if (_selectedPanel != null)
+                {
                     _selectedPanel.style.display = DisplayStyle.None;
-                    
+                }
+
                 return;
             }
 
@@ -217,7 +226,7 @@ namespace DualContouring.Editor
 
             // Supprimer les boutons des entités qui n'existent plus
             List<Entity> entitiesToRemove = new List<Entity>();
-            foreach (var kvp in _entityButtons)
+            foreach (KeyValuePair<Entity, Button> kvp in _entityButtons)
             {
                 bool stillExists = false;
                 for (int i = 0; i < entities.Length; i++)
@@ -228,13 +237,15 @@ namespace DualContouring.Editor
                         break;
                     }
                 }
+
                 if (!stillExists)
                 {
                     _scrollView.Remove(kvp.Value);
                     entitiesToRemove.Add(kvp.Key);
                 }
             }
-            foreach (var entity in entitiesToRemove)
+
+            foreach (Entity entity in entitiesToRemove)
             {
                 _entityButtons.Remove(entity);
             }
@@ -274,7 +285,10 @@ namespace DualContouring.Editor
             if (!Application.isPlaying || World.DefaultGameObjectInjectionWorld == null || _selectedPanel == null)
             {
                 if (_selectedPanel != null)
+                {
                     _selectedPanel.style.display = DisplayStyle.None;
+                }
+
                 return;
             }
 
@@ -302,14 +316,14 @@ namespace DualContouring.Editor
             if (entityManager.HasComponent<ScalarFieldGridSize>(selectedEntity))
             {
                 var gridSize = entityManager.GetComponentData<ScalarFieldGridSize>(selectedEntity);
-                
+
                 // Mettre à jour les limites des sliders (0 à GridSize - 1)
                 _selectedCellXField.lowValue = 0;
                 _selectedCellXField.highValue = Mathf.Max(0, gridSize.Value.x - 1);
-                
+
                 _selectedCellYField.lowValue = 0;
                 _selectedCellYField.highValue = Mathf.Max(0, gridSize.Value.y - 1);
-                
+
                 _selectedCellZField.lowValue = 0;
                 _selectedCellZField.highValue = Mathf.Max(0, gridSize.Value.z - 1);
             }
@@ -318,7 +332,7 @@ namespace DualContouring.Editor
             if (entityManager.HasComponent<SelectedCell>(selectedEntity))
             {
                 var selectedCell = entityManager.GetComponentData<SelectedCell>(selectedEntity);
-                
+
                 // Mettre à jour les champs sans déclencher l'événement
                 _selectedCellXField.SetValueWithoutNotify(selectedCell.Value.x);
                 _selectedCellYField.SetValueWithoutNotify(selectedCell.Value.y);
@@ -329,7 +343,9 @@ namespace DualContouring.Editor
         private void OnSelectedCellChanged()
         {
             if (!Application.isPlaying || World.DefaultGameObjectInjectionWorld == null)
+            {
                 return;
+            }
 
             EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
             EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldGridSize), typeof(ScalarFieldSelected));
@@ -349,7 +365,7 @@ namespace DualContouring.Editor
             {
                 var newSelectedCell = new SelectedCell
                 {
-                    Value = new Unity.Mathematics.int3(
+                    Value = new int3(
                         _selectedCellXField.value,
                         _selectedCellYField.value,
                         _selectedCellZField.value
@@ -365,10 +381,10 @@ namespace DualContouring.Editor
             var button = new Button(() => OnEntityButtonClicked(entity));
             button.name = $"ScalarFieldButton_{index}";
             UpdateButtonText(entity, button);
-            
+
             button.style.height = 28;
             button.style.marginBottom = 2;
-            
+
             _scrollView.Add(button);
             _entityButtons[entity] = button;
         }
@@ -376,19 +392,23 @@ namespace DualContouring.Editor
         private void OnEntityButtonClicked(Entity entity)
         {
             if (!Application.isPlaying || World.DefaultGameObjectInjectionWorld == null)
+            {
                 return;
+            }
 
             EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
             if (!entityManager.Exists(entity))
+            {
                 return;
+            }
 
             bool wasSelected = entityManager.HasComponent<ScalarFieldSelected>(entity);
 
             // Désélectionner TOUS les Scalar Fields
             EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldGridSize));
             NativeArray<Entity> allEntities = query.ToEntityArray(Allocator.Temp);
-            
+
             foreach (Entity e in allEntities)
             {
                 if (entityManager.HasComponent<ScalarFieldSelected>(e))
@@ -396,6 +416,7 @@ namespace DualContouring.Editor
                     entityManager.RemoveComponent<ScalarFieldSelected>(e);
                 }
             }
+
             allEntities.Dispose();
 
             // Si l'entité n'était pas sélectionnée, la sélectionner maintenant
@@ -406,7 +427,7 @@ namespace DualContouring.Editor
             }
 
             // Mettre à jour l'affichage de TOUS les boutons
-            foreach (var kvp in _entityButtons)
+            foreach (KeyValuePair<Entity, Button> kvp in _entityButtons)
             {
                 UpdateButtonText(kvp.Key, kvp.Value);
             }
@@ -417,12 +438,16 @@ namespace DualContouring.Editor
         private void UpdateButtonText(Entity entity, Button button)
         {
             if (!Application.isPlaying || World.DefaultGameObjectInjectionWorld == null || button == null)
+            {
                 return;
+            }
 
             EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
             if (!entityManager.Exists(entity))
+            {
                 return;
+            }
 
             bool isSelected = entityManager.HasComponent<ScalarFieldSelected>(entity);
             string icon = isSelected ? "✓" : "○";
@@ -437,6 +462,30 @@ namespace DualContouring.Editor
             {
                 button.style.backgroundColor = new Color(0.3f, 0.3f, 0.3f, 0.3f);
             }
+        }
+
+        private void OnVisualizationToggleChanged(bool newValue)
+        {
+            if (!Application.isPlaying || World.DefaultGameObjectInjectionWorld == null)
+            {
+                return;
+            }
+
+            EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+
+            // Récupérer le singleton ScalarFieldVisualizationOptions
+            EntityQuery query = entityManager.CreateEntityQuery(typeof(ScalarFieldVisualizationOptions));
+            NativeArray<Entity> singletonEntities = query.ToEntityArray(Allocator.Temp);
+
+            if (singletonEntities.Length > 0)
+            {
+                Entity singletonEntity = singletonEntities[0];
+                var options = entityManager.GetComponentData<ScalarFieldVisualizationOptions>(singletonEntity);
+                options.Enabled = newValue;
+                entityManager.SetComponentData(singletonEntity, options);
+            }
+
+            singletonEntities.Dispose();
         }
     }
 }

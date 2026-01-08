@@ -1,17 +1,21 @@
-using DualContouring.ScalarField;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEditor;
 using UnityEngine;
 
-namespace DualContouring.Debugs
+namespace DualContouring.ScalarField.Debug
 {
     /// <summary>
     ///     Système de visualisation des valeurs du champ scalaire dans l'éditeur
     /// </summary>
     public partial class ScalarFieldVisualizationSystem : SystemBase
     {
+        protected override void OnCreate()
+        {
+            EntityManager.CreateSingleton<ScalarFieldVisualizationOptions>();
+        }
+
         protected override void OnUpdate()
         {
             // Ce système ne fait rien pendant le jeu, seulement pour le debug dans l'éditeur
@@ -19,10 +23,16 @@ namespace DualContouring.Debugs
 
         public void DrawGizmos()
         {
-            foreach (var (scalarFieldBuffer, gridSize, localToWorld) in SystemAPI.Query<
-                         DynamicBuffer<ScalarFieldItem>,
-                         RefRO<ScalarFieldGridSize>,
-                         RefRO<LocalToWorld>>()
+            var visualizationOptions = SystemAPI.GetSingleton<ScalarFieldVisualizationOptions>();
+            if (!visualizationOptions.Enabled)
+            {
+                return;
+            }
+
+            foreach ((DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, RefRO<ScalarFieldGridSize> gridSize, RefRO<LocalToWorld> localToWorld) in SystemAPI.Query<
+                             DynamicBuffer<ScalarFieldItem>,
+                             RefRO<ScalarFieldGridSize>,
+                             RefRO<LocalToWorld>>()
                          .WithAll<ScalarFieldSelected>())
             {
                 DrawScalarFieldValues(scalarFieldBuffer, gridSize.ValueRO, localToWorld.ValueRO);
@@ -43,7 +53,7 @@ namespace DualContouring.Debugs
                             return;
                         }
 
-                        var scalarValue = scalarFieldBuffer[index];
+                        ScalarFieldItem scalarValue = scalarFieldBuffer[index];
                         float3 position = math.transform(localToWorld.Value, scalarValue.Position);
                         float value = scalarValue.Value;
 
@@ -79,4 +89,3 @@ namespace DualContouring.Debugs
         }
     }
 }
-
