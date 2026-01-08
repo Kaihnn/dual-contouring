@@ -49,6 +49,12 @@ namespace DualContouring.ScalarField
                     {
                         Value = authoring.GridSize,
                     });
+                AddComponent(entity,
+                    new ScalarFieldOrigin
+                    {
+                        Origin = authoring.Origin,
+                        CellSize = authoring.CellSize
+                    });
 
                 AddBuffer<DualContouringCell>(entity);
                 AddBuffer<DualContouringEdgeIntersection>(entity);

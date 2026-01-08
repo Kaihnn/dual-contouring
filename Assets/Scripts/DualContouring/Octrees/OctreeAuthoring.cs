@@ -1,10 +1,13 @@
-using System;
 using DualContouring.Debugs;
 using Unity.Entities;
 using UnityEngine;
 
 namespace DualContouring.Octrees
 {
+    /// <summary>
+    /// Composant pour ajouter le buffer OctreeNode et la visualisation de l'octree.
+    /// Doit être placé sur le même GameObject que ScalarFieldAuthoring.
+    /// </summary>
     public class OctreeAuthoring : MonoBehaviour
     {
         private void OnDrawGizmos()
@@ -22,8 +25,7 @@ namespace DualContouring.Octrees
             public override void Bake(OctreeAuthoring authoring)
             {
                 Entity entity = GetEntity(TransformUsageFlags.Dynamic);
-
-                DynamicBuffer<OctreeNode> buffer = AddBuffer<OctreeNode>(entity);
+                AddBuffer<OctreeNode>(entity);
             }
         }
     }
