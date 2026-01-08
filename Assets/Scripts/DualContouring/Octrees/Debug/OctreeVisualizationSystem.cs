@@ -72,32 +72,6 @@ namespace DualContouring.Octrees.Debug
             OctreeNode node = octreeBuffer[nodeIndex];
             float3 position = math.transform(localToWorld.Value, node.Position);
 
-            // Choisir une couleur en fonction de la profondeur
-            Color color = GetDepthColor(depth);
-
-            // Si le nœud traverse la surface (changement de signe), utiliser une couleur plus vive
-            if (node.Value >= 0)
-            {
-                color = Color.Lerp(color, Color.green, 0.3f);
-            }
-            else
-            {
-                color = Color.Lerp(color, Color.red, 0.3f);
-            }
-
-            Gizmos.color = color;
-            Gizmos.DrawWireCube(position, new float3(size, size, size));
-
-            // Dessiner le point central du nœud
-            Gizmos.color = node.Value >= 0 ? Color.green : Color.red;
-            Gizmos.DrawSphere(position, size * 0.05f);
-
-#if UNITY_EDITOR
-            // Afficher la valeur et la profondeur
-            Vector3 worldPos = position;
-            Vector3 offset = Vector3.up * (HandleUtility.GetHandleSize(worldPos) * 0.2f);
-            Handles.Label(worldPos + offset, $"D{depth}\nV:{node.Value:F2}");
-#endif
 
             // Si le nœud a des enfants, les dessiner récursivement
             if (node.ChildIndex >= 0)
@@ -110,6 +84,36 @@ namespace DualContouring.Octrees.Debug
                     int childIndex = node.ChildIndex + i;
                     DrawOctreeNode(octreeBuffer, childIndex, childSize, depth + 1, localToWorld);
                 }
+            }
+            else
+            {
+                // Ne dessiner que les nœuds feuilles (sans enfants)
+                // Choisir une couleur en fonction de la profondeur
+                Color color = GetDepthColor(depth);
+
+                // Si le nœud traverse la surface (changement de signe), utiliser une couleur plus vive
+                if (node.Value >= 0)
+                {
+                    color = Color.Lerp(color, Color.green, 0.3f);
+                }
+                else
+                {
+                    color = Color.Lerp(color, Color.red, 0.3f);
+                }
+
+                Gizmos.color = color;
+                Gizmos.DrawWireCube(position, new float3(size, size, size));
+
+                // Dessiner le point central du nœud
+                Gizmos.color = node.Value >= 0 ? Color.green : Color.red;
+                Gizmos.DrawSphere(position, size * 0.05f);
+
+#if UNITY_EDITOR
+                // Afficher la valeur et la profondeur
+                Vector3 worldPos = position;
+                Vector3 offset = Vector3.up * (HandleUtility.GetHandleSize(worldPos) * 0.2f);
+                Handles.Label(worldPos + offset, $"D{depth}\nV:{node.Value:F2}");
+#endif
             }
         }
 
