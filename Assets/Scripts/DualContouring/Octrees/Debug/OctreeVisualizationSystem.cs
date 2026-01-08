@@ -91,9 +91,8 @@ namespace DualContouring.Octrees.Debug
                 Gizmos.DrawSphere(worldPosition, size * 0.05f);
 
 #if UNITY_EDITOR
-                Vector3 worldPos = position;
-                Vector3 offset = Vector3.up * (HandleUtility.GetHandleSize(worldPos) * 0.2f);
-                Handles.Label(worldPos + offset, $"D{depth}\nV:{node.Value:F2}");
+                Vector3 offset = Vector3.up * (HandleUtility.GetHandleSize(worldPosition) * 0.2f);
+                Handles.Label((Vector3)worldPosition + offset, $"D{depth}\nV:{node.Value:F2}");
 #endif
             }
 
