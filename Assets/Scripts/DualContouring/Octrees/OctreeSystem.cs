@@ -15,61 +15,46 @@ namespace DualContouring.Octrees
         public int Depth;
     }
 
-    /// <summary>
-    ///     Système qui construit un octree à partir d'une grille de voxels
-    ///     La grille est un cube de taille puissance de 2
-    /// </summary>
-    public partial struct OctreeSystem : ISystem
+    [BurstCompile]
+    partial struct BuildOctreeJob : IJobEntity
     {
-        [BurstCompile]
-        public void OnCreate(ref SystemState state)
+        void Execute(
+            DynamicBuffer<ScalarFieldItem> scalarFieldBuffer,
+            DynamicBuffer<OctreeNode> octreeBuffer,
+            in ScalarFieldInfos scalarFieldInfos,
+            ref OctreeNodeInfos octreeNodeInfos)
         {
-            state.RequireForUpdate<ScalarFieldItem>();
-            state.RequireForUpdate<OctreeNode>();
-        }
+            octreeBuffer.Clear();
 
-        [BurstCompile]
-        public void OnUpdate(ref SystemState state)
-        {
-            foreach ((DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, DynamicBuffer<OctreeNode> octreeBuffer, RefRO<ScalarFieldInfos> scalarFieldInfos,
-                         RefRW<OctreeNodeInfos> octreeNodeInfos) in SystemAPI
-                         .Query<
-                             DynamicBuffer<ScalarFieldItem>,
-                             DynamicBuffer<OctreeNode>,
-                             RefRO<ScalarFieldInfos>,
-                             RefRW<OctreeNodeInfos>>())
+            if (scalarFieldBuffer.Length == 0)
             {
-                octreeBuffer.Clear();
-
-                if (scalarFieldBuffer.Length == 0)
-                {
-                    continue;
-                }
-
-                int3 gridSize = scalarFieldInfos.ValueRO.GridSize;
-                int maxDepth = CalculateMaxDepth(gridSize);
-
-                octreeNodeInfos.ValueRW.OctreeOffset = scalarFieldInfos.ValueRO.ScalarFieldOffset;
-                octreeNodeInfos.ValueRW.MaxDepth = maxDepth;
-                octreeNodeInfos.ValueRW.MinNodeSize = scalarFieldInfos.ValueRO.CellSize;
-                octreeNodeInfos.ValueRW.MaxNodeSize = math.cmax(scalarFieldInfos.ValueRO.GridSize) * scalarFieldInfos.ValueRO.CellSize;
-
-                int3 rootMin = int3.zero;
-                int3 rootMax = scalarFieldInfos.ValueRO.GridSize;
-                int rootSize = math.max(math.cmax(gridSize), 1);
-
-                octreeBuffer.Add(new OctreeNode
-                {
-                    Position = rootMin,
-                    Value = 0f,
-                    ChildIndex = -1
-                });
-
-                SubdivideNodeIterative(octreeBuffer, scalarFieldBuffer, gridSize, 0, rootMin, rootMax, rootSize, maxDepth);
+                return;
             }
-        }
 
-        private int CalculateMaxDepth(int3 gridSize)
+            int3 gridSize = scalarFieldInfos.GridSize;
+            int maxDepth = CalculateMaxDepth(in gridSize);
+
+            octreeNodeInfos.OctreeOffset = scalarFieldInfos.ScalarFieldOffset;
+            octreeNodeInfos.MaxDepth = maxDepth;
+            octreeNodeInfos.MinNodeSize = scalarFieldInfos.CellSize;
+            octreeNodeInfos.MaxNodeSize = math.cmax(scalarFieldInfos.GridSize) * scalarFieldInfos.CellSize;
+
+            int3 rootMin = int3.zero;
+            int3 rootMax = scalarFieldInfos.GridSize;
+            int rootSize = math.max(math.cmax(gridSize), 1);
+
+            octreeBuffer.Add(new OctreeNode
+            {
+                Position = rootMin,
+                Value = 0f,
+                ChildIndex = -1
+            });
+
+            SubdivideNodeIterative(ref octreeBuffer, in scalarFieldBuffer, in gridSize, 0, in rootMin, in rootMax, rootSize, maxDepth);
+        }
+        
+        [BurstCompile]
+        static int CalculateMaxDepth(in int3 gridSize)
         {
             int maxDimension = math.cmax(gridSize);
             int depth = 0;
@@ -78,22 +63,22 @@ namespace DualContouring.Octrees
                 maxDimension >>= 1;
                 depth++;
             }
-
             return depth;
         }
-
+        
         [BurstCompile]
-        private void SubdivideNodeIterative(
-            DynamicBuffer<OctreeNode> octreeBuffer,
-            DynamicBuffer<ScalarFieldItem> scalarField,
-            int3 gridSize,
+        static void SubdivideNodeIterative(
+            ref DynamicBuffer<OctreeNode> octreeBuffer,
+            in DynamicBuffer<ScalarFieldItem> scalarField,
+            in int3 gridSize,
             int rootNodeIndex,
-            int3 rootMin,
-            int3 rootMax,
+            in int3 rootMin,
+            in int3 rootMax,
             int rootSize,
             int maxDepth)
         {
-            var nodesToProcess = new NativeList<NodeToProcess>(8 * maxDepth, Allocator.Temp);
+            int estimatedCapacity = math.max(64, math.min(2048, maxDepth * maxDepth * 8));
+            var nodesToProcess = new NativeList<NodeToProcess>(estimatedCapacity, Allocator.Temp);
             
             nodesToProcess.Add(new NodeToProcess
             {
@@ -115,61 +100,61 @@ namespace DualContouring.Octrees
                     continue;
                 }
                 
-                if (!HasSignChange(scalarField, gridSize, current.Min, current.Max, out float sampledValue))
+                if (!HasSignChange(in scalarField, in gridSize, in current.Min, in current.Max, out float sampledValue))
                 {
-                    OctreeNode node = octreeBuffer[current.NodeIndex];
+                    ref OctreeNode node = ref octreeBuffer.ElementAt(current.NodeIndex);
                     node.Value = sampledValue;
-                    octreeBuffer[current.NodeIndex] = node;
                     continue;
                 }
                 
                 int firstChildIndex = octreeBuffer.Length;
-                OctreeNode parentNode = octreeBuffer[current.NodeIndex];
+                ref OctreeNode parentNode = ref octreeBuffer.ElementAt(current.NodeIndex);
                 parentNode.ChildIndex = firstChildIndex;
                 parentNode.Value = sampledValue;
-                octreeBuffer[current.NodeIndex] = parentNode;
                 
                 int childSize = current.Size / 2;
+                int3 childSizeVec = new int3(childSize);
                 
-                for (int x = 0; x <= 1; x++)
+                for (int childIdx = 0; childIdx < 8; childIdx++)
                 {
-                    for (int y = 0; y <= 1; y++)
+                    int3 offset = new int3(
+                        (childIdx >> 0) & 1,
+                        (childIdx >> 1) & 1,
+                        (childIdx >> 2) & 1
+                    );
+                    
+                    int3 childMin = current.Min + offset * childSize;
+                    int3 childMax = childMin + childSizeVec;
+                    
+                    int childIndex = octreeBuffer.Length;
+                    
+                    octreeBuffer.Add(new OctreeNode
                     {
-                        for (int z = 0; z <= 1; z++)
-                        {
-                            int3 childMin = current.Min + new int3(x * childSize, y * childSize, z * childSize);
-                            int3 childMax = childMin + new int3(childSize, childSize, childSize);
-                            
-                            int childIndex = octreeBuffer.Length;
-                            
-                            octreeBuffer.Add(new OctreeNode
-                            {
-                                Position = childMin,
-                                Value = 0f,
-                                ChildIndex = -1
-                            });
-                            
-                            nodesToProcess.Add(new NodeToProcess
-                            {
-                                NodeIndex = childIndex,
-                                Min = childMin,
-                                Max = childMax,
-                                Size = childSize,
-                                Depth = current.Depth + 1
-                            });
-                        }
-                    }
+                        Position = childMin,
+                        Value = 0f,
+                        ChildIndex = -1
+                    });
+                    
+                    nodesToProcess.Add(new NodeToProcess
+                    {
+                        NodeIndex = childIndex,
+                        Min = childMin,
+                        Max = childMax,
+                        Size = childSize,
+                        Depth = current.Depth + 1
+                    });
                 }
             }
             
             nodesToProcess.Dispose();
         }
-
-        private bool HasSignChange(
-            DynamicBuffer<ScalarFieldItem> scalarField,
-            int3 gridSize,
-            int3 min,
-            int3 max,
+        
+        [BurstCompile]
+        static bool HasSignChange(
+            in DynamicBuffer<ScalarFieldItem> scalarField,
+            in int3 gridSize,
+            in int3 min,
+            in int3 max,
             out float sampledValue)
         {
             bool hasPositive = false;
@@ -207,6 +192,27 @@ namespace DualContouring.Octrees
 
             sampledValue = count != 0 ? addedValue / count : 0f;
             return hasPositive && hasNegative;
+        }
+    }
+
+    /// <summary>
+    ///     Système qui construit un octree à partir d'une grille de voxels
+    ///     La grille est un cube de taille puissance de 2
+    /// </summary>
+    public partial struct OctreeSystem : ISystem
+    {
+        [BurstCompile]
+        public void OnCreate(ref SystemState state)
+        {
+            state.RequireForUpdate<ScalarFieldItem>();
+            state.RequireForUpdate<OctreeNode>();
+        }
+
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
+        {
+            var job = new BuildOctreeJob();
+            state.Dependency = job.ScheduleParallel(state.Dependency);
         }
     }
 }
