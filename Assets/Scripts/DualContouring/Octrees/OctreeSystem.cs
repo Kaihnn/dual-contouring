@@ -1,10 +1,20 @@
 using DualContouring.ScalarField;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
 namespace DualContouring.Octrees
 {
+    struct NodeToProcess
+    {
+        public int NodeIndex;
+        public int3 Min;
+        public int3 Max;
+        public int Size;
+        public int Depth;
+    }
+
     /// <summary>
     ///     Système qui construit un octree à partir d'une grille de voxels
     ///     La grille est un cube de taille puissance de 2
@@ -18,6 +28,7 @@ namespace DualContouring.Octrees
             state.RequireForUpdate<OctreeNode>();
         }
 
+        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             foreach ((DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, DynamicBuffer<OctreeNode> octreeBuffer, RefRO<ScalarFieldInfos> scalarFieldInfos,
@@ -54,7 +65,7 @@ namespace DualContouring.Octrees
                     ChildIndex = -1
                 });
 
-                SubdivideNode(octreeBuffer, scalarFieldBuffer, gridSize, 0, rootMin, rootMax, rootSize, 0, maxDepth);
+                SubdivideNodeIterative(octreeBuffer, scalarFieldBuffer, gridSize, 0, rootMin, rootMax, rootSize, maxDepth);
             }
         }
 
@@ -71,67 +82,87 @@ namespace DualContouring.Octrees
             return depth;
         }
 
-        private void SubdivideNode(
+        [BurstCompile]
+        private void SubdivideNodeIterative(
             DynamicBuffer<OctreeNode> octreeBuffer,
             DynamicBuffer<ScalarFieldItem> scalarField,
             int3 gridSize,
-            int nodeIndex,
-            int3 min,
-            int3 max,
-            int size,
-            int depth,
+            int rootNodeIndex,
+            int3 rootMin,
+            int3 rootMax,
+            int rootSize,
             int maxDepth)
         {
-            if (depth >= maxDepth)
+            var nodesToProcess = new NativeList<NodeToProcess>(8 * maxDepth, Allocator.Temp);
+            
+            nodesToProcess.Add(new NodeToProcess
             {
-                return;
-            }
-            int firstChildIndex = octreeBuffer.Length;
-            OctreeNode parentNode = octreeBuffer[nodeIndex];
-            if (HasSignChange(scalarField, gridSize, min, max, out float sampledValue))
+                NodeIndex = rootNodeIndex,
+                Min = rootMin,
+                Max = rootMax,
+                Size = rootSize,
+                Depth = 0
+            });
+            
+            while (nodesToProcess.Length > 0)
             {
+                int lastIndex = nodesToProcess.Length - 1;
+                NodeToProcess current = nodesToProcess[lastIndex];
+                nodesToProcess.RemoveAtSwapBack(lastIndex);
+                
+                if (current.Depth >= maxDepth)
+                {
+                    continue;
+                }
+                
+                if (!HasSignChange(scalarField, gridSize, current.Min, current.Max, out float sampledValue))
+                {
+                    OctreeNode node = octreeBuffer[current.NodeIndex];
+                    node.Value = sampledValue;
+                    octreeBuffer[current.NodeIndex] = node;
+                    continue;
+                }
+                
+                int firstChildIndex = octreeBuffer.Length;
+                OctreeNode parentNode = octreeBuffer[current.NodeIndex];
                 parentNode.ChildIndex = firstChildIndex;
-
-                // Créer d'abord les 8 enfants
+                parentNode.Value = sampledValue;
+                octreeBuffer[current.NodeIndex] = parentNode;
+                
+                int childSize = current.Size / 2;
+                
                 for (int x = 0; x <= 1; x++)
                 {
                     for (int y = 0; y <= 1; y++)
                     {
                         for (int z = 0; z <= 1; z++)
                         {
-                            int childSize = size / 2;
-                            int3 childMin = min + new int3(x * childSize, y * childSize, z * childSize);
-
+                            int3 childMin = current.Min + new int3(x * childSize, y * childSize, z * childSize);
+                            int3 childMax = childMin + new int3(childSize, childSize, childSize);
+                            
+                            int childIndex = octreeBuffer.Length;
+                            
                             octreeBuffer.Add(new OctreeNode
                             {
                                 Position = childMin,
                                 Value = 0f,
                                 ChildIndex = -1
                             });
-                        }
-                    }
-                }
-
-                // Ensuite subdiviser récursivement chaque enfant
-                int i = 0;
-                for (int x = 0; x <= 1; x++)
-                {
-                    for (int y = 0; y <= 1; y++)
-                    {
-                        for (int z = 0; z <= 1; z++)
-                        {
-                            int childSize = size / 2;
-                            int3 childMin = min + new int3(x * childSize, y * childSize, z * childSize);
-                            int3 childMax = childMin + new int3(childSize, childSize, childSize);
-
-                            SubdivideNode(octreeBuffer, scalarField, gridSize, firstChildIndex + i, childMin, childMax, childSize, depth + 1, maxDepth);
-                            i++;
+                            
+                            nodesToProcess.Add(new NodeToProcess
+                            {
+                                NodeIndex = childIndex,
+                                Min = childMin,
+                                Max = childMax,
+                                Size = childSize,
+                                Depth = current.Depth + 1
+                            });
                         }
                     }
                 }
             }
-            parentNode.Value = sampledValue;
-            octreeBuffer[nodeIndex] = parentNode;
+            
+            nodesToProcess.Dispose();
         }
 
         private bool HasSignChange(
