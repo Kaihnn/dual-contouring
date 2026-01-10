@@ -1,5 +1,4 @@
 using DualContouring.DualContouring;
-using DualContouring.ScalarField;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -21,36 +20,30 @@ namespace DualContouring.MeshGeneration
             state.RequireForUpdate<DualContouringCell>();
         }
 
-        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            foreach (var (cellBuffer, vertexBuffer, triangleBuffer, scalarFieldInfo) in SystemAPI.Query<
+            foreach (var (cellBuffer, vertexBuffer, triangleBuffer) in SystemAPI.Query<
                          DynamicBuffer<DualContouringCell>,
                          DynamicBuffer<DualContouringMeshVertex>,
-                         DynamicBuffer<DualContouringMeshTriangle>,
-                         RefRO<ScalarFieldInfos>>())
+                         DynamicBuffer<DualContouringMeshTriangle>>())
             {
                 vertexBuffer.Clear();
                 triangleBuffer.Clear();
-
-                int3 cellGridSize = scalarFieldInfo.ValueRO.GridSize - new int3(1, 1, 1);
             
-                // Créer un mapping entre l'index de cellule et l'index de vertex
-                NativeHashMap<int, int> cellToVertexIndex = new NativeHashMap<int, int>(cellBuffer.Length, Allocator.Temp);
+                NativeHashMap<int3, int> cellGridToVertexIndex = new NativeHashMap<int3, int>(cellBuffer.Length, Allocator.Temp);
             
-                // Première passe: créer les vertices pour toutes les cellules qui en ont
                 for (int i = 0; i < cellBuffer.Length; i++)
                 {
                     DualContouringCell cell = cellBuffer[i];
                     if (cell.HasVertex)
                     {
                         int vertexIndex = vertexBuffer.Length;
-                        cellToVertexIndex.Add(i, vertexIndex);
+                        cellGridToVertexIndex.Add(cell.GridIndex, vertexIndex);
                     
                         vertexBuffer.Add(new DualContouringMeshVertex
                         {
                             Position = cell.VertexPosition,
-                            Normal = cell.Normal // Utiliser la normale calculée de la cellule
+                            Normal = cell.Normal
                         });
                     }
                 }
@@ -59,88 +52,75 @@ namespace DualContouring.MeshGeneration
                 // Dans le dual contouring, on crée une face pour chaque arête de la grille qui traverse la surface
                 // On parcourt toutes les arêtes possibles de la grille de cellules
 
-                // Faces perpendiculaires à l'axe X (entre cellules le long de X)
-                GenerateFacesAlongAxis(cellBuffer, cellToVertexIndex, vertexBuffer, triangleBuffer,
-                    cellGridSize, new int3(1, 0, 0), new int3(0, 1, 0), new int3(0, 0, 1));
-            
-                // Faces perpendiculaires à l'axe Y (entre cellules le long de Y)
-                GenerateFacesAlongAxis(cellBuffer, cellToVertexIndex, vertexBuffer, triangleBuffer,
-                    cellGridSize, new int3(0, 1, 0), new int3(0, 0, 1), new int3(1, 0, 0));
-            
-                // Faces perpendiculaires à l'axe Z (entre cellules le long de Z)
-                GenerateFacesAlongAxis(cellBuffer, cellToVertexIndex, vertexBuffer, triangleBuffer,
-                    cellGridSize, new int3(0, 0, 1), new int3(1, 0, 0), new int3(0, 1, 0));
-            
-                // Les normales sont déjà définies à partir des cellules, pas besoin de les recalculer
+                GenerateFacesFromCells(cellBuffer, cellGridToVertexIndex, vertexBuffer, triangleBuffer);
 
-                cellToVertexIndex.Dispose();
+                cellGridToVertexIndex.Dispose();
             }
         }
     
-        /// <summary>
-        ///     Génère des faces le long d'un axe donné
-        /// </summary>
-        private void GenerateFacesAlongAxis(
+        private void GenerateFacesFromCells(
             DynamicBuffer<DualContouringCell> cellBuffer,
-            NativeHashMap<int, int> cellToVertexIndex,
+            NativeHashMap<int3, int> cellGridToVertexIndex,
+            DynamicBuffer<DualContouringMeshVertex> vertexBuffer,
+            DynamicBuffer<DualContouringMeshTriangle> triangleBuffer)
+        {
+            NativeHashSet<int3> processedEdges = new NativeHashSet<int3>(cellBuffer.Length * 3, Allocator.Temp);
+
+            for (int cellIdx = 0; cellIdx < cellBuffer.Length; cellIdx++)
+            {
+                DualContouringCell cell = cellBuffer[cellIdx];
+                if (!cell.HasVertex)
+                {
+                    continue;
+                }
+
+                int3 cellPos = cell.GridIndex;
+
+                GenerateFacesForEdge(cellPos, new int3(1, 0, 0), new int3(0, 1, 0), new int3(0, 0, 1),
+                    cellGridToVertexIndex, vertexBuffer, triangleBuffer, processedEdges);
+
+                GenerateFacesForEdge(cellPos, new int3(0, 1, 0), new int3(0, 0, 1), new int3(1, 0, 0),
+                    cellGridToVertexIndex, vertexBuffer, triangleBuffer, processedEdges);
+
+                GenerateFacesForEdge(cellPos, new int3(0, 0, 1), new int3(1, 0, 0), new int3(0, 1, 0),
+                    cellGridToVertexIndex, vertexBuffer, triangleBuffer, processedEdges);
+            }
+
+            processedEdges.Dispose();
+        }
+
+        private void GenerateFacesForEdge(
+            int3 baseCoord,
+            int3 axisDir,
+            int3 tangent1,
+            int3 tangent2,
+            NativeHashMap<int3, int> cellGridToVertexIndex,
             DynamicBuffer<DualContouringMeshVertex> vertexBuffer,
             DynamicBuffer<DualContouringMeshTriangle> triangleBuffer,
-            int3 cellGridSize,
-            int3 axisDir,      // Direction de l'arête (direction normale à la face)
-            int3 tangent1,     // Premier axe tangent à la face
-            int3 tangent2)     // Deuxième axe tangent à la face
+            NativeHashSet<int3> processedEdges)
         {
-            // Pour chaque position possible d'arête le long de cet axe
-            int3 maxCoord = cellGridSize - axisDir;
-        
-            for (int i0 = 0; i0 <= maxCoord.x; i0++)
+            int3 edgeKey = baseCoord * 8 + axisDir * 4;
+            if (processedEdges.Contains(edgeKey))
             {
-                for (int i1 = 0; i1 <= maxCoord.y; i1++)
-                {
-                    for (int i2 = 0; i2 <= maxCoord.z; i2++)
-                    {
-                        int3 baseCoord = new int3(i0, i1, i2);
-                    
-                        // Les 4 cellules qui partagent cette arête
-                        int3 c00 = baseCoord;
-                        int3 c10 = baseCoord + tangent1;
-                        int3 c01 = baseCoord + tangent2;
-                        int3 c11 = baseCoord + tangent1 + tangent2;
-                    
-                        // Vérifier que toutes les cellules sont dans les limites
-                        if (!ScalarFieldUtility.IsInBounds(c00, cellGridSize) ||
-                            !ScalarFieldUtility.IsInBounds(c10, cellGridSize) ||
-                            !ScalarFieldUtility.IsInBounds(c01, cellGridSize) ||
-                            !ScalarFieldUtility.IsInBounds(c11, cellGridSize))
-                        {
-                            continue;
-                        }
-                    
-                        int idx00 = ScalarFieldUtility.CoordToIndex(c00, cellGridSize);
-                        int idx10 = ScalarFieldUtility.CoordToIndex(c10, cellGridSize);
-                        int idx01 = ScalarFieldUtility.CoordToIndex(c01, cellGridSize);
-                        int idx11 = ScalarFieldUtility.CoordToIndex(c11, cellGridSize);
-                    
-                        // Vérifier que toutes les cellules ont des vertices
-                        if (!cellToVertexIndex.TryGetValue(idx00, out int v00) ||
-                            !cellToVertexIndex.TryGetValue(idx10, out int v10) ||
-                            !cellToVertexIndex.TryGetValue(idx01, out int v01) ||
-                            !cellToVertexIndex.TryGetValue(idx11, out int v11))
-                        {
-                            continue;
-                        }
-                    
-                        // Créer un quad (2 triangles) entre les 4 vertices
-                        // L'ordre des vertices est déterminé par la normale de face (moyenne des normales des vertices)
-
-                        // Triangle 1: v00, v10, v11
-                        AddTriangleWithCorrectWinding(triangleBuffer, vertexBuffer, v00, v10, v11);
-
-                        // Triangle 2: v00, v11, v01
-                        AddTriangleWithCorrectWinding(triangleBuffer, vertexBuffer, v00, v11, v01);
-                    }
-                }
+                return;
             }
+            processedEdges.Add(edgeKey);
+
+            int3 c00 = baseCoord;
+            int3 c10 = baseCoord + tangent1;
+            int3 c01 = baseCoord + tangent2;
+            int3 c11 = baseCoord + tangent1 + tangent2;
+
+            if (!cellGridToVertexIndex.TryGetValue(c00, out int v00) ||
+                !cellGridToVertexIndex.TryGetValue(c10, out int v10) ||
+                !cellGridToVertexIndex.TryGetValue(c01, out int v01) ||
+                !cellGridToVertexIndex.TryGetValue(c11, out int v11))
+            {
+                return;
+            }
+
+            AddTriangleWithCorrectWinding(triangleBuffer, vertexBuffer, v00, v10, v11);
+            AddTriangleWithCorrectWinding(triangleBuffer, vertexBuffer, v00, v11, v01);
         }
     
         /// <summary>

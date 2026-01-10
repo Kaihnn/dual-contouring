@@ -10,5 +10,6 @@ namespace DualContouring.DualContouring
         public bool HasVertex;
         public float3 VertexPosition;
         public float3 Normal;
+        public int3 GridIndex;
     }
 }

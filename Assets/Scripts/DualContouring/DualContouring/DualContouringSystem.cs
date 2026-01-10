@@ -8,6 +8,7 @@ using Unity.Mathematics;
 namespace DualContouring.DualContouring
 {
     [BurstCompile]
+    [DisableAutoCreation]
     public partial struct DualContouringSystem : ISystem
     {
         [BurstCompile]
@@ -115,7 +116,8 @@ namespace DualContouring.DualContouring
                 Size = cellSize,
                 HasVertex = hasVertex,
                 VertexPosition = vertexPosition,
-                Normal = cellNormal
+                Normal = cellNormal,
+                GridIndex = cellIndex
             });
         }
 
