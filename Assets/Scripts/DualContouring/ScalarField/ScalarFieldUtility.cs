@@ -6,7 +6,8 @@ namespace DualContouring.ScalarField
     [BurstCompile]
     public static class ScalarFieldUtility
     {
-        public static int CoordToIndex(int x, int y, int z, int3 gridSize)
+        [BurstCompile]
+        public static int CoordToIndex(int x, int y, int z, in int3 gridSize)
         {
             if (x < 0 || x >= gridSize.x ||
                 y < 0 || y >= gridSize.y ||
@@ -18,12 +19,14 @@ namespace DualContouring.ScalarField
             return x + z * gridSize.x + y * gridSize.x * gridSize.z;
         }
 
-        public static int CoordToIndex(int3 coord, int3 gridSize)
+        [BurstCompile]
+        public static int CoordToIndex(in int3 coord, in int3 gridSize)
         {
             return CoordToIndex(coord.x, coord.y, coord.z, gridSize);
         }
 
-        public static int3 IndexToCoord(int index, int3 gridSize)
+        [BurstCompile]
+        public static void IndexToCoord(int index, in int3 gridSize, out float3 coordinates)
         {
             int layerSize = gridSize.x * gridSize.z;
             int y = index / layerSize;
@@ -31,7 +34,7 @@ namespace DualContouring.ScalarField
             int z = remainder / gridSize.x;
             int x = remainder % gridSize.x;
 
-            return new int3(x, y, z);
+            coordinates = new int3(x, y, z);
         }
 
         [BurstCompile]
@@ -39,8 +42,9 @@ namespace DualContouring.ScalarField
         {
             worldPosition = scalarFieldOffset + new float3(coord.x * cellSize, coord.y * cellSize, coord.z * cellSize);
         }
-
-        public static bool IsInBounds(int3 coord, int3 gridSize)
+        
+        [BurstCompile]
+        public static bool IsInBounds(in int3 coord, in int3 gridSize)
         {
             return coord.x >= 0 && coord.x < gridSize.x &&
                    coord.y >= 0 && coord.y < gridSize.y &&
