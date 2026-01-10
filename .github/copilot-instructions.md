@@ -16,6 +16,7 @@ Provide a ready-to-use solution for other Unity projects requiring procedural te
 - Framework: Unity with ECS (Entity Component System)
 - Language: C#
 - Architecture: Unity Entities (DOTS)
+- **Unity Entities Version**: 1.4.3 (com.unity.entities@1.4.3)
 
 ### Compilation
 - Compilation is handled exclusively by Unity Editor
