@@ -58,21 +58,21 @@ namespace DualContouring.MeshGeneration
                 // Deuxième passe: créer les faces entre les cellules adjacentes
                 // Dans le dual contouring, on crée une face pour chaque arête de la grille qui traverse la surface
                 // On parcourt toutes les arêtes possibles de la grille de cellules
-            
+
                 // Faces perpendiculaires à l'axe X (entre cellules le long de X)
-                GenerateFacesAlongAxis(cellBuffer, cellToVertexIndex, vertexBuffer, triangleBuffer, 
+                GenerateFacesAlongAxis(cellBuffer, cellToVertexIndex, vertexBuffer, triangleBuffer,
                     cellGridSize, new int3(1, 0, 0), new int3(0, 1, 0), new int3(0, 0, 1));
             
                 // Faces perpendiculaires à l'axe Y (entre cellules le long de Y)
-                GenerateFacesAlongAxis(cellBuffer, cellToVertexIndex, vertexBuffer, triangleBuffer, 
+                GenerateFacesAlongAxis(cellBuffer, cellToVertexIndex, vertexBuffer, triangleBuffer,
                     cellGridSize, new int3(0, 1, 0), new int3(0, 0, 1), new int3(1, 0, 0));
             
                 // Faces perpendiculaires à l'axe Z (entre cellules le long de Z)
-                GenerateFacesAlongAxis(cellBuffer, cellToVertexIndex, vertexBuffer, triangleBuffer, 
+                GenerateFacesAlongAxis(cellBuffer, cellToVertexIndex, vertexBuffer, triangleBuffer,
                     cellGridSize, new int3(0, 0, 1), new int3(1, 0, 0), new int3(0, 1, 0));
             
                 // Les normales sont déjà définies à partir des cellules, pas besoin de les recalculer
-            
+
                 cellToVertexIndex.Dispose();
             }
         }
@@ -132,10 +132,10 @@ namespace DualContouring.MeshGeneration
                     
                         // Créer un quad (2 triangles) entre les 4 vertices
                         // L'ordre des vertices est déterminé par la normale de face (moyenne des normales des vertices)
-                    
+
                         // Triangle 1: v00, v10, v11
                         AddTriangleWithCorrectWinding(triangleBuffer, vertexBuffer, v00, v10, v11);
-                    
+
                         // Triangle 2: v00, v11, v01
                         AddTriangleWithCorrectWinding(triangleBuffer, vertexBuffer, v00, v11, v01);
                     }

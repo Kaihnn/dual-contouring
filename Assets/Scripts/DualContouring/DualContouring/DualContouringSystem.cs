@@ -1,4 +1,5 @@
 using DualContouring.ScalarField;
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -6,9 +7,6 @@ using Unity.Mathematics;
 
 namespace DualContouring.DualContouring
 {
-    /// <summary>
-    ///     Système qui remplit le buffer DualContouringCell à partir du ScalarField
-    /// </summary>
     [BurstCompile]
     public partial struct DualContouringSystem : ISystem
     {
@@ -21,38 +19,40 @@ namespace DualContouring.DualContouring
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            foreach ((DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, DynamicBuffer<DualContouringCell> cellBuffer, DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer,
-                         RefRO<ScalarFieldInfos> scalarFieldInfos) in SystemAPI.Query<
-                         DynamicBuffer<ScalarFieldItem>,
-                         DynamicBuffer<DualContouringCell>,
-                         DynamicBuffer<DualContouringEdgeIntersection>,
-                         RefRO<ScalarFieldInfos>>())
+            var job = new DualContouringJob();
+            job.ScheduleParallel();
+        }
+    }
+
+    [BurstCompile]
+    partial struct DualContouringJob : IJobEntity
+    {
+        void Execute(
+            ref DynamicBuffer<DualContouringCell> cellBuffer,
+            ref DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer,
+            in DynamicBuffer<ScalarFieldItem> scalarFieldBuffer,
+            in ScalarFieldInfos scalarFieldInfos)
+        {
+            cellBuffer.Clear();
+            edgeIntersectionBuffer.Clear();
+
+            int3 cellGridSize = scalarFieldInfos.GridSize - new int3(1, 1, 1);
+
+            for (int y = 0; y < cellGridSize.y; y++)
             {
-                cellBuffer.Clear();
-                edgeIntersectionBuffer.Clear();
-
-                // Pour dual contouring, on traite les cellules (gridSize - 1)^3
-                // Avec une grille 3x3x3, on a 2x2x2 = 8 cellules possibles
-                int3 cellGridSize = scalarFieldInfos.ValueRO.GridSize - new int3(1, 1, 1);
-
-                for (int y = 0; y < cellGridSize.y; y++)
+                for (int z = 0; z < cellGridSize.z; z++)
                 {
-                    for (int z = 0; z < cellGridSize.z; z++)
+                    for (int x = 0; x < cellGridSize.x; x++)
                     {
-                        for (int x = 0; x < cellGridSize.x; x++)
-                        {
-                            ProcessCell(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, new int3(x, y, z), scalarFieldInfos.ValueRO);
-                        }
+                        ProcessCell(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, new int3(x, y, z), scalarFieldInfos);
                     }
                 }
             }
         }
 
-        /// <summary>
-        ///     Traite une cellule du dual contouring
-        /// </summary>
-        private void ProcessCell(
-            DynamicBuffer<ScalarFieldItem> scalarField,
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void ProcessCell(
+            in DynamicBuffer<ScalarFieldItem> scalarField,
             DynamicBuffer<DualContouringCell> cells,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             int3 cellIndex,
@@ -119,12 +119,9 @@ namespace DualContouring.DualContouring
             });
         }
 
-        /// <summary>
-        ///     Calcule la position du vertex dans une cellule en utilisant QEF (Quadratic Error Function)
-        ///     et la normale de la cellule (somme des normales des arêtes, normalisée et inversée)
-        /// </summary>
-        private void CalculateVertexPositionAndNormal(
-            DynamicBuffer<ScalarFieldItem> scalarField,
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        void CalculateVertexPositionAndNormal(
+            in DynamicBuffer<ScalarFieldItem> scalarField,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             int3 cellIndex,
             ScalarFieldInfos scalarFieldInfos,
@@ -280,11 +277,8 @@ namespace DualContouring.DualContouring
             }
         }
 
-        /// <summary>
-        ///     Résout le QEF (Quadratic Error Function) pour trouver la position optimale du vertex
-        ///     Minimise la somme des carrés des distances aux plans tangents
-        /// </summary>
-        private float3 SolveQef(NativeArray<float3> positions, NativeArray<float3> normals, int count, float3 massPoint)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float3 SolveQef(NativeArray<float3> positions, NativeArray<float3> normals, int count, float3 massPoint)
         {
             // On résout le système A^T * A * x = A^T * b
             // où A est la matrice des normales et b est le vecteur des distances signées
@@ -320,10 +314,8 @@ namespace DualContouring.DualContouring
             return result;
         }
 
-        /// <summary>
-        ///     Résout un système linéaire 3x3: Ax = b en utilisant l'élimination de Gauss
-        /// </summary>
-        private float3 SolveLinearSystem3X3(float3x3 a, float3 b)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float3 SolveLinearSystem3X3(float3x3 a, float3 b)
         {
             // Créer une matrice augmentée [A|b]
             float epsilon = 1e-10f;
@@ -411,8 +403,9 @@ namespace DualContouring.DualContouring
             return result;
         }
 
-        private bool TryGetEdgeIntersection(
-            DynamicBuffer<ScalarFieldItem> scalarField,
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        bool TryGetEdgeIntersection(
+            in DynamicBuffer<ScalarFieldItem> scalarField,
             int3 corner1Index,
             int3 corner2Index,
             out float3 intersection,
@@ -455,10 +448,8 @@ namespace DualContouring.DualContouring
             return false;
         }
 
-        /// <summary>
-        ///     Calcule la normale au point d'intersection en utilisant le gradient du champ scalaire
-        /// </summary>
-        private float3 CalculateNormal(DynamicBuffer<ScalarFieldItem> scalarField, float3 position, ScalarFieldInfos scalarFieldInfos)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float3 CalculateNormal(in DynamicBuffer<ScalarFieldItem> scalarField, float3 position, ScalarFieldInfos scalarFieldInfos)
         {
             float cellSize = scalarFieldInfos.CellSize;
 
@@ -493,10 +484,8 @@ namespace DualContouring.DualContouring
             return new float3(0, 1, 0);
         }
 
-        /// <summary>
-        ///     Échantillonne le champ scalaire à une position donnée (interpolation trilinéaire)
-        /// </summary>
-        private float SampleScalarField(DynamicBuffer<ScalarFieldItem> scalarField, float3 position, ScalarFieldInfos scalarFieldInfos)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float SampleScalarField(in DynamicBuffer<ScalarFieldItem> scalarField, float3 position, ScalarFieldInfos scalarFieldInfos)
         {
             if (scalarField.Length == 0)
             {
@@ -549,10 +538,8 @@ namespace DualContouring.DualContouring
             return math.lerp(v0, v1, t.z);
         }
 
-        /// <summary>
-        ///     Récupère la valeur scalaire à une coordonnée de grille donnée
-        /// </summary>
-        private float GetScalarValueAtCoord(DynamicBuffer<ScalarFieldItem> scalarField, int3 coord, int3 gridSize)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        float GetScalarValueAtCoord(in DynamicBuffer<ScalarFieldItem> scalarField, int3 coord, int3 gridSize)
         {
             int index = ScalarFieldUtility.CoordToIndex(coord, gridSize);
             if (index >= 0 && index < scalarField.Length)
