@@ -1,6 +1,7 @@
+using System.Runtime.CompilerServices;
+using DualContouring.DualContouring.Debug;
 using DualContouring.Octrees;
 using DualContouring.ScalarField;
-using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -15,20 +16,27 @@ namespace DualContouring.DualContouring
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<OctreeNode>();
+            state.RequireForUpdate<DualContouringOptions>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            if (!SystemAPI.TryGetSingleton(out DualContouringOptions options) ||
+                options.Type != DualContouringType.Octree)
+            {
+                return;
+            }
+
             var job = new DualContouringOctreeJob();
             job.ScheduleParallel();
         }
     }
 
     [BurstCompile]
-    partial struct DualContouringOctreeJob : IJobEntity
+    internal partial struct DualContouringOctreeJob : IJobEntity
     {
-        void Execute(
+        private void Execute(
             ref DynamicBuffer<DualContouringCell> cellBuffer,
             ref DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer,
             in DynamicBuffer<OctreeNode> octreeBuffer,
@@ -44,7 +52,7 @@ namespace DualContouring.DualContouring
                 return;
             }
 
-            var nodesToProcess = new NativeList<int>(math.max(64, octreeBuffer.Length / 8), Allocator.Temp);
+            NativeList<int> nodesToProcess = new NativeList<int>(math.max(64, octreeBuffer.Length / 8), Allocator.Temp);
             nodesToProcess.Add(0);
 
             while (nodesToProcess.Length > 0)
@@ -77,7 +85,7 @@ namespace DualContouring.DualContouring
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void ProcessLeafNode(
+        private void ProcessLeafNode(
             in DynamicBuffer<ScalarFieldItem> scalarField,
             DynamicBuffer<DualContouringCell> cells,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
@@ -141,7 +149,7 @@ namespace DualContouring.DualContouring
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CalculateVertexPositionAndNormal(
+        private void CalculateVertexPositionAndNormal(
             in DynamicBuffer<ScalarFieldItem> scalarField,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             int3 cellIndex,
@@ -286,7 +294,7 @@ namespace DualContouring.DualContouring
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        float3 SolveQef(NativeArray<float3> positions, NativeArray<float3> normals, int count, float3 massPoint)
+        private float3 SolveQef(NativeArray<float3> positions, NativeArray<float3> normals, int count, float3 massPoint)
         {
             float3x3 ata = float3x3.zero;
             float3 atb = float3.zero;
@@ -315,7 +323,7 @@ namespace DualContouring.DualContouring
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        float3 SolveLinearSystem3X3(float3x3 a, float3 b)
+        private float3 SolveLinearSystem3X3(float3x3 a, float3 b)
         {
             float epsilon = 1e-10f;
 
@@ -396,7 +404,7 @@ namespace DualContouring.DualContouring
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        bool TryGetEdgeIntersection(
+        private bool TryGetEdgeIntersection(
             in DynamicBuffer<ScalarFieldItem> scalarField,
             int3 corner1Index,
             int3 corner2Index,
@@ -438,7 +446,7 @@ namespace DualContouring.DualContouring
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        float3 CalculateNormal(in DynamicBuffer<ScalarFieldItem> scalarField, float3 position, ScalarFieldInfos scalarFieldInfos)
+        private float3 CalculateNormal(in DynamicBuffer<ScalarFieldItem> scalarField, float3 position, ScalarFieldInfos scalarFieldInfos)
         {
             float cellSize = scalarFieldInfos.CellSize;
             float epsilon = cellSize * 0.1f;
@@ -467,7 +475,7 @@ namespace DualContouring.DualContouring
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        float SampleScalarField(in DynamicBuffer<ScalarFieldItem> scalarField, float3 position, ScalarFieldInfos scalarFieldInfos)
+        private float SampleScalarField(in DynamicBuffer<ScalarFieldItem> scalarField, float3 position, ScalarFieldInfos scalarFieldInfos)
         {
             if (scalarField.Length == 0)
             {
@@ -512,7 +520,7 @@ namespace DualContouring.DualContouring
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        float GetScalarValueAtCoord(in DynamicBuffer<ScalarFieldItem> scalarField, int3 coord, int3 gridSize)
+        private float GetScalarValueAtCoord(in DynamicBuffer<ScalarFieldItem> scalarField, int3 coord, int3 gridSize)
         {
             int index = ScalarFieldUtility.CoordToIndex(coord, gridSize);
             if (index >= 0 && index < scalarField.Length)
@@ -524,4 +532,3 @@ namespace DualContouring.DualContouring
         }
     }
 }
-
