@@ -265,7 +265,7 @@ namespace DualContouring.DualContouring
                 }
 
                 // Utiliser QEF pour trouver la meilleure position
-                float3 vertexPos = SolveQef(positions, normals, count, massPoint);
+                QefSolver.SolveQef(positions, normals, count, massPoint, out float3 vertexPos);
 
                 // Calculer les limites de la cellule
                 ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellMin);
@@ -303,130 +303,6 @@ namespace DualContouring.DualContouring
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private float3 SolveQef(NativeArray<float3> positions, NativeArray<float3> normals, int count, float3 massPoint)
-        {
-            // QEF résout: minimiser sum((n_i · (x - p_i))^2)
-            // Équivalent à résoudre: A^T * A * (x - massPoint) = A^T * b
-            // où b_i = n_i · (p_i - massPoint)
-
-            float3x3 ata = float3x3.zero;
-            float3 atb = float3.zero;
-
-            for (int i = 0; i < count; i++)
-            {
-                float3 n = normals[i];
-                float3 p = positions[i];
-
-                // A^T * A += n ⊗ n (produit tensoriel)
-                ata.c0 += n * n.x;
-                ata.c1 += n * n.y;
-                ata.c2 += n * n.z;
-
-                // Distance signée du massPoint au plan défini par (p, n)
-                float distance = math.dot(n, p - massPoint);
-                atb += n * distance;
-            }
-
-            // Régularisation pour stabilité numérique (évite les matrices singulières)
-            float regularization = 0.001f;
-            ata.c0.x += regularization;
-            ata.c1.y += regularization;
-            ata.c2.z += regularization;
-
-            // Résoudre A^T * A * offset = A^T * b
-            float3 offset = SolveLinearSystem3X3(ata, atb);
-
-            // Si la solution échoue, retourner le centre de masse
-            if (math.any(math.isnan(offset)) || math.any(math.isinf(offset)))
-            {
-                return massPoint;
-            }
-
-            // Le résultat final est massPoint + offset
-            return massPoint + offset;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private float3 SolveLinearSystem3X3(float3x3 a, float3 b)
-        {
-            float epsilon = 1e-10f;
-
-            var row0 = new float3(a.c0.x, a.c1.x, a.c2.x);
-            var row1 = new float3(a.c0.y, a.c1.y, a.c2.y);
-            var row2 = new float3(a.c0.z, a.c1.z, a.c2.z);
-            float3 rhs = b;
-
-            if (math.abs(row0.x) < epsilon)
-            {
-                if (math.abs(row1.x) > math.abs(row0.x))
-                {
-                    float3 temp = row0;
-                    row0 = row1;
-                    row1 = temp;
-                    float tempB = rhs.x;
-                    rhs.x = rhs.y;
-                    rhs.y = tempB;
-                }
-
-                if (math.abs(row2.x) > math.abs(row0.x))
-                {
-                    float3 temp = row0;
-                    row0 = row2;
-                    row2 = temp;
-                    float tempB = rhs.x;
-                    rhs.x = rhs.z;
-                    rhs.z = tempB;
-                }
-            }
-
-            if (math.abs(row0.x) > epsilon)
-            {
-                float factor1 = row1.x / row0.x;
-                row1 -= row0 * factor1;
-                rhs.y -= rhs.x * factor1;
-
-                float factor2 = row2.x / row0.x;
-                row2 -= row0 * factor2;
-                rhs.z -= rhs.x * factor2;
-            }
-
-            if (math.abs(row1.y) < epsilon && math.abs(row2.y) > math.abs(row1.y))
-            {
-                float3 temp = row1;
-                row1 = row2;
-                row2 = temp;
-                float tempB = rhs.y;
-                rhs.y = rhs.z;
-                rhs.z = tempB;
-            }
-
-            if (math.abs(row1.y) > epsilon)
-            {
-                float factor = row2.y / row1.y;
-                row2 -= row1 * factor;
-                rhs.z -= rhs.y * factor;
-            }
-
-            float3 result = float3.zero;
-
-            if (math.abs(row2.z) > epsilon)
-            {
-                result.z = rhs.z / row2.z;
-            }
-
-            if (math.abs(row1.y) > epsilon)
-            {
-                result.y = (rhs.y - row1.z * result.z) / row1.y;
-            }
-
-            if (math.abs(row0.x) > epsilon)
-            {
-                result.x = (rhs.x - row0.y * result.y - row0.z * result.z) / row0.x;
-            }
-
-            return result;
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool TryGetEdgeIntersection(
