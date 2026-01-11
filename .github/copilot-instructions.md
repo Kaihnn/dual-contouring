@@ -24,6 +24,10 @@ Provide a ready-to-use solution for other Unity projects requiring procedural te
 - Code validation must rely on static analysis and IDE IntelliSense
 - Runtime errors can only be verified by running the Unity Editor
 
+### File Management
+- **Never create .meta files** - Unity generates them automatically
+- Only create .cs files and let Unity handle metadata
+
 ## Coding Rules
 
 ### C# Naming Conventions
