@@ -29,17 +29,18 @@ namespace DualContouring.ScalarField.Debug
                 return;
             }
 
-            foreach ((DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, RefRO<ScalarFieldInfos> scalarFieldInfos, RefRO<LocalToWorld> localToWorld) in SystemAPI.Query<
+            foreach ((DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, RefRO<ScalarFieldInfos> scalarFieldInfos, RefRO<LocalToWorld> localToWorld, RefRO<ScalarFieldSelectedCell> selectedCell) in SystemAPI.Query<
                              DynamicBuffer<ScalarFieldItem>,
                              RefRO<ScalarFieldInfos>,
-                             RefRO<LocalToWorld>>()
+                             RefRO<LocalToWorld>,
+                             RefRO<ScalarFieldSelectedCell>>()
                          .WithAll<ScalarFieldSelected>())
             {
-                DrawScalarFieldValues(scalarFieldBuffer, scalarFieldInfos.ValueRO, localToWorld.ValueRO);
+                DrawScalarFieldValues(scalarFieldBuffer, scalarFieldInfos.ValueRO, localToWorld.ValueRO, selectedCell.ValueRO);
             }
         }
 
-        private void DrawScalarFieldValues(DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, ScalarFieldInfos infos, LocalToWorld localToWorld)
+        private void DrawScalarFieldValues(DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, ScalarFieldInfos infos, LocalToWorld localToWorld, ScalarFieldSelectedCell selectedCell)
         {
             int index = 0;
             for (int y = 0; y < infos.GridSize.y; y++)
@@ -53,8 +54,17 @@ namespace DualContouring.ScalarField.Debug
                             return;
                         }
 
+                        int3 cellPosition = new int3(x, y, z);
+                        
+                        // Ne dessiner que les cellules dans les limites définies
+                        if (math.any(cellPosition < selectedCell.Min) || math.any(cellPosition > selectedCell.Max))
+                        {
+                            index++;
+                            continue;
+                        }
+
                         ScalarFieldItem scalarValue = scalarFieldBuffer[index];
-                        ScalarFieldUtility.GetWorldPosition(new int3(x, y, z), infos.CellSize, infos.ScalarFieldOffset, out float3 localPosition);
+                        ScalarFieldUtility.GetWorldPosition(cellPosition, infos.CellSize, infos.ScalarFieldOffset, out float3 localPosition);
                         float3 position = math.transform(localToWorld.Value, localPosition);
                         float value = scalarValue.Value;
 

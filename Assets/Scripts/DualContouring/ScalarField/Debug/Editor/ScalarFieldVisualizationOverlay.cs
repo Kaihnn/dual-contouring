@@ -16,9 +16,12 @@ namespace DualContouring.ScalarField.Debug.Editor
         private Label _headerLabel;
         private VisualElement _root;
         private ScrollView _scrollView;
-        private SliderInt _selectedCellXField;
-        private SliderInt _selectedCellYField;
-        private SliderInt _selectedCellZField;
+        private SliderInt _selectedCellMinXField;
+        private SliderInt _selectedCellMinYField;
+        private SliderInt _selectedCellMinZField;
+        private SliderInt _selectedCellMaxXField;
+        private SliderInt _selectedCellMaxYField;
+        private SliderInt _selectedCellMaxZField;
         private VisualElement _selectedPanel;
         private Label _selectedTitleLabel;
         private Toggle _visualizationToggle;
@@ -88,68 +91,131 @@ namespace DualContouring.ScalarField.Debug.Editor
             _selectedTitleLabel.style.marginBottom = 5;
             _selectedPanel.Add(_selectedTitleLabel);
 
-            // Champs pour Selected Cell
-            var cellLabel = new Label("Selected Cell:");
-            cellLabel.style.fontSize = 10;
-            cellLabel.style.color = new Color(0.8f, 0.8f, 0.8f);
-            cellLabel.style.marginBottom = 2;
-            _selectedPanel.Add(cellLabel);
+            // Min Cell
+            var minCellLabel = new Label("Min Cell:");
+            minCellLabel.style.fontSize = 10;
+            minCellLabel.style.color = new Color(0.8f, 0.8f, 0.8f);
+            minCellLabel.style.marginBottom = 2;
+            _selectedPanel.Add(minCellLabel);
 
-            var cellContainer = new VisualElement();
-            cellContainer.style.flexDirection = FlexDirection.Column;
-            cellContainer.style.marginBottom = 3;
+            var minCellContainer = new VisualElement();
+            minCellContainer.style.flexDirection = FlexDirection.Column;
+            minCellContainer.style.marginBottom = 5;
 
-            // Slider pour X
-            var xContainer = new VisualElement();
-            xContainer.style.flexDirection = FlexDirection.Row;
-            xContainer.style.marginBottom = 2;
-            var xLabel = new Label("X:");
-            xLabel.style.fontSize = 10;
-            xLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
-            xLabel.style.width = 15;
-            xLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
-            xContainer.Add(xLabel);
-            _selectedCellXField = new SliderInt(0, 10);
-            _selectedCellXField.style.flexGrow = 1;
-            _selectedCellXField.showInputField = true;
-            _selectedCellXField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
-            xContainer.Add(_selectedCellXField);
-            cellContainer.Add(xContainer);
+            // Min X
+            var minXContainer = new VisualElement();
+            minXContainer.style.flexDirection = FlexDirection.Row;
+            minXContainer.style.marginBottom = 2;
+            var minXLabel = new Label("X:");
+            minXLabel.style.fontSize = 10;
+            minXLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
+            minXLabel.style.width = 15;
+            minXLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
+            minXContainer.Add(minXLabel);
+            _selectedCellMinXField = new SliderInt(0, 10);
+            _selectedCellMinXField.style.flexGrow = 1;
+            _selectedCellMinXField.showInputField = true;
+            _selectedCellMinXField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
+            minXContainer.Add(_selectedCellMinXField);
+            minCellContainer.Add(minXContainer);
 
-            // Slider pour Y
-            var yContainer = new VisualElement();
-            yContainer.style.flexDirection = FlexDirection.Row;
-            yContainer.style.marginBottom = 2;
-            var yLabel = new Label("Y:");
-            yLabel.style.fontSize = 10;
-            yLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
-            yLabel.style.width = 15;
-            yLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
-            yContainer.Add(yLabel);
-            _selectedCellYField = new SliderInt(0, 10);
-            _selectedCellYField.style.flexGrow = 1;
-            _selectedCellYField.showInputField = true;
-            _selectedCellYField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
-            yContainer.Add(_selectedCellYField);
-            cellContainer.Add(yContainer);
+            // Min Y
+            var minYContainer = new VisualElement();
+            minYContainer.style.flexDirection = FlexDirection.Row;
+            minYContainer.style.marginBottom = 2;
+            var minYLabel = new Label("Y:");
+            minYLabel.style.fontSize = 10;
+            minYLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
+            minYLabel.style.width = 15;
+            minYLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
+            minYContainer.Add(minYLabel);
+            _selectedCellMinYField = new SliderInt(0, 10);
+            _selectedCellMinYField.style.flexGrow = 1;
+            _selectedCellMinYField.showInputField = true;
+            _selectedCellMinYField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
+            minYContainer.Add(_selectedCellMinYField);
+            minCellContainer.Add(minYContainer);
 
-            // Slider pour Z
-            var zContainer = new VisualElement();
-            zContainer.style.flexDirection = FlexDirection.Row;
-            var zLabel = new Label("Z:");
-            zLabel.style.fontSize = 10;
-            zLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
-            zLabel.style.width = 15;
-            zLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
-            zContainer.Add(zLabel);
-            _selectedCellZField = new SliderInt(0, 10);
-            _selectedCellZField.style.flexGrow = 1;
-            _selectedCellZField.showInputField = true;
-            _selectedCellZField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
-            zContainer.Add(_selectedCellZField);
-            cellContainer.Add(zContainer);
+            // Min Z
+            var minZContainer = new VisualElement();
+            minZContainer.style.flexDirection = FlexDirection.Row;
+            var minZLabel = new Label("Z:");
+            minZLabel.style.fontSize = 10;
+            minZLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
+            minZLabel.style.width = 15;
+            minZLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
+            minZContainer.Add(minZLabel);
+            _selectedCellMinZField = new SliderInt(0, 10);
+            _selectedCellMinZField.style.flexGrow = 1;
+            _selectedCellMinZField.showInputField = true;
+            _selectedCellMinZField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
+            minZContainer.Add(_selectedCellMinZField);
+            minCellContainer.Add(minZContainer);
 
-            _selectedPanel.Add(cellContainer);
+            _selectedPanel.Add(minCellContainer);
+
+            // Max Cell
+            var maxCellLabel = new Label("Max Cell:");
+            maxCellLabel.style.fontSize = 10;
+            maxCellLabel.style.color = new Color(0.8f, 0.8f, 0.8f);
+            maxCellLabel.style.marginBottom = 2;
+            _selectedPanel.Add(maxCellLabel);
+
+            var maxCellContainer = new VisualElement();
+            maxCellContainer.style.flexDirection = FlexDirection.Column;
+            maxCellContainer.style.marginBottom = 3;
+
+            // Max X
+            var maxXContainer = new VisualElement();
+            maxXContainer.style.flexDirection = FlexDirection.Row;
+            maxXContainer.style.marginBottom = 2;
+            var maxXLabel = new Label("X:");
+            maxXLabel.style.fontSize = 10;
+            maxXLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
+            maxXLabel.style.width = 15;
+            maxXLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
+            maxXContainer.Add(maxXLabel);
+            _selectedCellMaxXField = new SliderInt(0, 10);
+            _selectedCellMaxXField.style.flexGrow = 1;
+            _selectedCellMaxXField.showInputField = true;
+            _selectedCellMaxXField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
+            maxXContainer.Add(_selectedCellMaxXField);
+            maxCellContainer.Add(maxXContainer);
+
+            // Max Y
+            var maxYContainer = new VisualElement();
+            maxYContainer.style.flexDirection = FlexDirection.Row;
+            maxYContainer.style.marginBottom = 2;
+            var maxYLabel = new Label("Y:");
+            maxYLabel.style.fontSize = 10;
+            maxYLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
+            maxYLabel.style.width = 15;
+            maxYLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
+            maxYContainer.Add(maxYLabel);
+            _selectedCellMaxYField = new SliderInt(0, 10);
+            _selectedCellMaxYField.style.flexGrow = 1;
+            _selectedCellMaxYField.showInputField = true;
+            _selectedCellMaxYField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
+            maxYContainer.Add(_selectedCellMaxYField);
+            maxCellContainer.Add(maxYContainer);
+
+            // Max Z
+            var maxZContainer = new VisualElement();
+            maxZContainer.style.flexDirection = FlexDirection.Row;
+            var maxZLabel = new Label("Z:");
+            maxZLabel.style.fontSize = 10;
+            maxZLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
+            maxZLabel.style.width = 15;
+            maxZLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
+            maxZContainer.Add(maxZLabel);
+            _selectedCellMaxZField = new SliderInt(0, 10);
+            _selectedCellMaxZField.style.flexGrow = 1;
+            _selectedCellMaxZField.showInputField = true;
+            _selectedCellMaxZField.RegisterValueChangedCallback(evt => OnSelectedCellChanged());
+            maxZContainer.Add(_selectedCellMaxZField);
+            maxCellContainer.Add(maxZContainer);
+
+            _selectedPanel.Add(maxCellContainer);
             _root.Add(_selectedPanel);
 
             // S'abonner aux mises à jour
@@ -318,25 +384,38 @@ namespace DualContouring.ScalarField.Debug.Editor
                 var scalarFieldInfos = entityManager.GetComponentData<ScalarFieldInfos>(selectedEntity);
 
                 // Mettre à jour les limites des sliders (0 à GridSize - 1)
-                _selectedCellXField.lowValue = 0;
-                _selectedCellXField.highValue = Mathf.Max(0, scalarFieldInfos.GridSize.x - 1);
+                _selectedCellMinXField.lowValue = 0;
+                _selectedCellMinXField.highValue = Mathf.Max(0, scalarFieldInfos.GridSize.x - 1);
 
-                _selectedCellYField.lowValue = 0;
-                _selectedCellYField.highValue = Mathf.Max(0, scalarFieldInfos.GridSize.y - 1);
+                _selectedCellMinYField.lowValue = 0;
+                _selectedCellMinYField.highValue = Mathf.Max(0, scalarFieldInfos.GridSize.y - 1);
 
-                _selectedCellZField.lowValue = 0;
-                _selectedCellZField.highValue = Mathf.Max(0, scalarFieldInfos.GridSize.z - 1);
+                _selectedCellMinZField.lowValue = 0;
+                _selectedCellMinZField.highValue = Mathf.Max(0, scalarFieldInfos.GridSize.z - 1);
+
+                _selectedCellMaxXField.lowValue = 0;
+                _selectedCellMaxXField.highValue = Mathf.Max(0, scalarFieldInfos.GridSize.x - 1);
+
+                _selectedCellMaxYField.lowValue = 0;
+                _selectedCellMaxYField.highValue = Mathf.Max(0, scalarFieldInfos.GridSize.y - 1);
+
+                _selectedCellMaxZField.lowValue = 0;
+                _selectedCellMaxZField.highValue = Mathf.Max(0, scalarFieldInfos.GridSize.z - 1);
             }
 
             // Récupérer et afficher la Selected Cell
-            if (entityManager.HasComponent<SelectedCell>(selectedEntity))
+            if (entityManager.HasComponent<ScalarFieldSelectedCell>(selectedEntity))
             {
-                var selectedCell = entityManager.GetComponentData<SelectedCell>(selectedEntity);
+                var selectedCell = entityManager.GetComponentData<ScalarFieldSelectedCell>(selectedEntity);
 
                 // Mettre à jour les champs sans déclencher l'événement
-                _selectedCellXField.SetValueWithoutNotify(selectedCell.Value.x);
-                _selectedCellYField.SetValueWithoutNotify(selectedCell.Value.y);
-                _selectedCellZField.SetValueWithoutNotify(selectedCell.Value.z);
+                _selectedCellMinXField.SetValueWithoutNotify(selectedCell.Min.x);
+                _selectedCellMinYField.SetValueWithoutNotify(selectedCell.Min.y);
+                _selectedCellMinZField.SetValueWithoutNotify(selectedCell.Min.z);
+
+                _selectedCellMaxXField.SetValueWithoutNotify(selectedCell.Max.x);
+                _selectedCellMaxYField.SetValueWithoutNotify(selectedCell.Max.y);
+                _selectedCellMaxZField.SetValueWithoutNotify(selectedCell.Max.z);
             }
         }
 
@@ -361,14 +440,19 @@ namespace DualContouring.ScalarField.Debug.Editor
             selectedEntities.Dispose();
 
             // Mettre à jour le composant SelectedCell
-            if (entityManager.HasComponent<SelectedCell>(selectedEntity))
+            if (entityManager.HasComponent<ScalarFieldSelectedCell>(selectedEntity))
             {
-                var newSelectedCell = new SelectedCell
+                var newSelectedCell = new ScalarFieldSelectedCell
                 {
-                    Value = new int3(
-                        _selectedCellXField.value,
-                        _selectedCellYField.value,
-                        _selectedCellZField.value
+                    Min = new int3(
+                        _selectedCellMinXField.value,
+                        _selectedCellMinYField.value,
+                        _selectedCellMinZField.value
+                    ),
+                    Max = new int3(
+                        _selectedCellMaxXField.value,
+                        _selectedCellMaxYField.value,
+                        _selectedCellMaxZField.value
                     )
                 };
                 entityManager.SetComponentData(selectedEntity, newSelectedCell);

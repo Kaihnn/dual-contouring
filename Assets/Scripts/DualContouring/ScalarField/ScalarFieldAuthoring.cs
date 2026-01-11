@@ -42,9 +42,9 @@ namespace DualContouring.ScalarField
             {
                 Entity entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent(entity,
-                    new SelectedCell
+                    new ScalarFieldSelectedCell
                     {
-                        Value = int3.zero
+                        Min = int3.zero
                     });
                 AddComponent(entity,
                     new ScalarFieldInfos
