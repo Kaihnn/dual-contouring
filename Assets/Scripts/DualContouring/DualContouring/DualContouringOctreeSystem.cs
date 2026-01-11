@@ -97,6 +97,12 @@ namespace DualContouring.DualContouring
             float cellSize = scalarFieldInfos.CellSize;
             float3 scalarFieldOffset = scalarFieldInfos.ScalarFieldOffset;
 
+            int3 cellGridSize = gridSize - new int3(1, 1, 1);
+            if (math.any(cellIndex < 0) || math.any(cellIndex >= cellGridSize))
+            {
+                return;
+            }
+
             int config = 0;
 
             for (int i = 0; i < 8; i++)
