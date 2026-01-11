@@ -15,6 +15,7 @@ namespace DualContouring.DualContouring.Debug.Editor
     {
         private VisualElement _root;
         private Toggle _enabledToggle;
+        private Toggle _drawEmptyCellToggle;
 
         public override VisualElement CreatePanelContent()
         {
@@ -46,6 +47,13 @@ namespace DualContouring.DualContouring.Debug.Editor
             _enabledToggle.RegisterValueChangedCallback(evt => OnEnabledChanged(evt.newValue));
             _root.Add(_enabledToggle);
 
+            // Toggle pour DrawEmptyCell
+            _drawEmptyCellToggle = new Toggle("Draw Empty Cells");
+            _drawEmptyCellToggle.style.color = Color.white;
+            _drawEmptyCellToggle.style.fontSize = 12;
+            _drawEmptyCellToggle.RegisterValueChangedCallback(evt => OnDrawEmptyCellChanged(evt.newValue));
+            _root.Add(_drawEmptyCellToggle);
+
             // S'abonner aux mises à jour
             EditorApplication.update += OnEditorUpdate;
 
@@ -63,7 +71,7 @@ namespace DualContouring.DualContouring.Debug.Editor
 
         private void OnEditorUpdate()
         {
-            if (_enabledToggle != null)
+            if (_enabledToggle != null && _drawEmptyCellToggle != null)
             {
                 UpdateToggleValue();
             }
@@ -76,11 +84,14 @@ namespace DualContouring.DualContouring.Debug.Editor
                 // En mode édition, désactiver le toggle
                 _enabledToggle.SetEnabled(false);
                 _enabledToggle.SetValueWithoutNotify(false);
+                _drawEmptyCellToggle.SetEnabled(false);
+                _drawEmptyCellToggle.SetValueWithoutNotify(false);
                 return;
             }
 
             // En mode Play, activer le toggle
             _enabledToggle.SetEnabled(true);
+            _drawEmptyCellToggle.SetEnabled(true);
 
             EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
             
@@ -92,6 +103,7 @@ namespace DualContouring.DualContouring.Debug.Editor
             {
                 var options = entityManager.GetComponentData<DualContouringVisualizationOptions>(entities[0]);
                 _enabledToggle.SetValueWithoutNotify(options.Enabled);
+                _drawEmptyCellToggle.SetValueWithoutNotify(options.DrawEmptyCell);
             }
             
             entities.Dispose();
@@ -112,6 +124,30 @@ namespace DualContouring.DualContouring.Debug.Editor
             {
                 var options = entityManager.GetComponentData<DualContouringVisualizationOptions>(entities[0]);
                 options.Enabled = newValue;
+                entityManager.SetComponentData(entities[0], options);
+                
+                // Rafraîchir la SceneView
+                SceneView.RepaintAll();
+            }
+            
+            entities.Dispose();
+        }
+
+        private void OnDrawEmptyCellChanged(bool newValue)
+        {
+            if (!Application.isPlaying || World.DefaultGameObjectInjectionWorld == null)
+                return;
+
+            EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+
+            // Chercher le singleton via une requête
+            EntityQuery query = entityManager.CreateEntityQuery(typeof(DualContouringVisualizationOptions));
+            Unity.Collections.NativeArray<Entity> entities = query.ToEntityArray(Unity.Collections.Allocator.Temp);
+            
+            if (entities.Length > 0)
+            {
+                var options = entityManager.GetComponentData<DualContouringVisualizationOptions>(entities[0]);
+                options.DrawEmptyCell = newValue;
                 entityManager.SetComponentData(entities[0], options);
                 
                 // Rafraîchir la SceneView

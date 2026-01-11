@@ -50,7 +50,7 @@ namespace DualContouring.DualContouring.Debug
                 else
                 {
                     // Dessiner uniquement la cellule sélectionnée
-                    DrawCell(cellBuffer[selectedIndex], localToWorld.ValueRO);
+                    DrawCell(cellBuffer[selectedIndex], localToWorld.ValueRO, visualizationOptions.DrawEmptyCell);
 
                     // Dessiner les intersections d'arêtes pour la cellule sélectionnée uniquement
                     DrawEdgeIntersectionsForCell(edgeIntersectionBuffer, selectedIndex, localToWorld.ValueRO);
@@ -65,13 +65,15 @@ namespace DualContouring.DualContouring.Debug
 
         private void DrawAllCells(DynamicBuffer<DualContouringCell> cellBuffer, LocalToWorld localToWorld)
         {
+            var visualizationOptions = SystemAPI.GetSingleton<DualContouringVisualizationOptions>();
+            
             foreach (DualContouringCell cell in cellBuffer)
             {
-                DrawCell(cell, localToWorld);
+                DrawCell(cell, localToWorld, visualizationOptions.DrawEmptyCell);
             }
         }
 
-        private void DrawCell(DualContouringCell cell, LocalToWorld localToWorld)
+        private void DrawCell(DualContouringCell cell, LocalToWorld localToWorld, bool drawEmptyCell = false)
         {
             if (cell.HasVertex)
             {
@@ -92,7 +94,7 @@ namespace DualContouring.DualContouring.Debug
                 Gizmos.DrawLine(vertexPosition,
                     vertexPosition + cell.Normal * cell.Size * 0.5f);
             }
-            else
+            else if (drawEmptyCell)
             {
                 // Appliquer le transform
                 float3 cellCenter = math.transform(localToWorld.Value, cell.Position + new float3(0.5f, 0.5f, 0.5f) * cell.Size);
