@@ -35,4 +35,13 @@ namespace DualContouring.MeshGeneration
     {
         public UnityObjectRef<Mesh> Mesh;
     }
+
+    /// <summary>
+    ///     Composant qui contient les bounds précalculées du mesh
+    /// </summary>
+    public struct DualContouringMeshBounds : IComponentData
+    {
+        public float3 Center;
+        public float3 Size;
+    }
 }

@@ -14,12 +14,19 @@ namespace DualContouring.MeshGeneration
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<DualContouringCell>();
+            state.RequireForUpdate<BeginSimulationEntityCommandBufferSystem.Singleton>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var generateMeshJob = new GenerateMeshJob();
+            var ecbSingleton = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>();
+            var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged);
+
+            var generateMeshJob = new GenerateMeshJob
+            {
+                ECB = ecb.AsParallelWriter()
+            };
             generateMeshJob.ScheduleParallel();
         }
     }
@@ -27,7 +34,11 @@ namespace DualContouring.MeshGeneration
     [BurstCompile]
     public partial struct GenerateMeshJob : IJobEntity
     {
+        public EntityCommandBuffer.ParallelWriter ECB;
+
         private void Execute(
+            Entity entity,
+            [ChunkIndexInQuery] int sortKey,
             DynamicBuffer<DualContouringCell> cellBuffer,
             DynamicBuffer<DualContouringMeshVertex> vertexBuffer,
             DynamicBuffer<DualContouringMeshTriangle> triangleBuffer)
@@ -56,6 +67,33 @@ namespace DualContouring.MeshGeneration
             GenerateFacesFromCells(cellBuffer, cellGridToVertexIndex, vertexBuffer, triangleBuffer);
 
             cellGridToVertexIndex.Dispose();
+
+            if (vertexBuffer.Length > 0)
+            {
+                var bounds = ComputeBounds(vertexBuffer);
+                ECB.AddComponent(sortKey, entity, bounds);
+                ECB.AddComponent<DualContouringMeshDirty>(sortKey, entity);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private DualContouringMeshBounds ComputeBounds(DynamicBuffer<DualContouringMeshVertex> vertexBuffer)
+        {
+            float3 min = new float3(float.MaxValue);
+            float3 max = new float3(float.MinValue);
+
+            for (int i = 0; i < vertexBuffer.Length; i++)
+            {
+                float3 pos = vertexBuffer[i].Position;
+                min = math.min(min, pos);
+                max = math.max(max, pos);
+            }
+
+            return new DualContouringMeshBounds
+            {
+                Center = (min + max) * 0.5f,
+                Size = max - min
+            };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
