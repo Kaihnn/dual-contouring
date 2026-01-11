@@ -1,5 +1,6 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace DualContouring.MeshGeneration
 {
@@ -25,5 +26,13 @@ namespace DualContouring.MeshGeneration
     /// </summary>
     public struct DualContouringMeshDirty : IComponentData
     {
+    }
+
+    /// <summary>
+    ///     Composant qui contient la référence au mesh Unity généré
+    /// </summary>
+    public struct DualContouringMeshReference : IComponentData
+    {
+        public UnityObjectRef<Mesh> Mesh;
     }
 }
