@@ -264,15 +264,25 @@ namespace DualContouring.DualContouring
                     cellNormal = -math.normalize(normalSum);
                 }
 
+                // Utiliser QEF pour trouver la meilleure position
                 float3 vertexPos = SolveQef(positions, normals, count, massPoint);
 
-                int scalarIndex = ScalarFieldUtility.CoordToIndex(cellIndex, gridSize);
-                if (scalarIndex >= 0 && scalarIndex < scalarField.Length)
+                // Calculer les limites de la cellule
+                ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellMin);
+                float3 cellMax = cellMin + new float3(cellSize, cellSize, cellSize);
+
+                // Vérifier si le vertex est trop loin du centre de masse des intersections
+                float distanceToMass = math.length(vertexPos - massPoint);
+                float maxDistance = cellSize * 2.0f; // Autoriser une certaine distance
+
+                if (distanceToMass > maxDistance || math.any(math.isnan(vertexPos)) || math.any(math.isinf(vertexPos)))
                 {
-                    ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellMin);
-                    float3 cellMax = cellMin + new float3(cellSize, cellSize, cellSize);
-                    vertexPos = math.clamp(vertexPos, cellMin, cellMax);
+                    // Fallback vers le centre de masse si le QEF donne une solution aberrante
+                    vertexPos = massPoint;
                 }
+
+                // Contraindre le vertex à l'intérieur de la cellule
+                vertexPos = math.clamp(vertexPos, cellMin, cellMax);
 
                 vertexPosition = vertexPos;
 
@@ -296,6 +306,10 @@ namespace DualContouring.DualContouring
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float3 SolveQef(NativeArray<float3> positions, NativeArray<float3> normals, int count, float3 massPoint)
         {
+            // QEF résout: minimiser sum((n_i · (x - p_i))^2)
+            // Équivalent à résoudre: A^T * A * (x - massPoint) = A^T * b
+            // où b_i = n_i · (p_i - massPoint)
+
             float3x3 ata = float3x3.zero;
             float3 atb = float3.zero;
 
@@ -304,22 +318,33 @@ namespace DualContouring.DualContouring
                 float3 n = normals[i];
                 float3 p = positions[i];
 
+                // A^T * A += n ⊗ n (produit tensoriel)
                 ata.c0 += n * n.x;
                 ata.c1 += n * n.y;
                 ata.c2 += n * n.z;
 
-                float d = math.dot(n, p);
-                atb += n * d;
+                // Distance signée du massPoint au plan défini par (p, n)
+                float distance = math.dot(n, p - massPoint);
+                atb += n * distance;
             }
 
-            float3 result = SolveLinearSystem3X3(ata, atb);
+            // Régularisation pour stabilité numérique (évite les matrices singulières)
+            float regularization = 0.001f;
+            ata.c0.x += regularization;
+            ata.c1.y += regularization;
+            ata.c2.z += regularization;
 
-            if (math.any(math.isnan(result)) || math.any(math.isinf(result)))
+            // Résoudre A^T * A * offset = A^T * b
+            float3 offset = SolveLinearSystem3X3(ata, atb);
+
+            // Si la solution échoue, retourner le centre de masse
+            if (math.any(math.isnan(offset)) || math.any(math.isinf(offset)))
             {
                 return massPoint;
             }
 
-            return result;
+            // Le résultat final est massPoint + offset
+            return massPoint + offset;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -249,20 +249,28 @@ namespace DualContouring.DualContouring
                 float normalLength = math.length(normalSum);
                 if (normalLength > 0.0001f)
                 {
-                    cellNormal = -math.normalize(normalSum); // Normaliser et inverser
+                    cellNormal = -math.normalize(normalSum);
                 }
 
                 // Utiliser QEF pour trouver la meilleure position
                 float3 vertexPos = SolveQef(positions, normals, count, massPoint);
 
-                // Contraindre le vertex à l'intérieur de la cellule
-                int scalarIndex = ScalarFieldUtility.CoordToIndex(cellIndex, gridSize);
-                if (scalarIndex >= 0 && scalarIndex < scalarField.Length)
+                // Calculer les limites de la cellule
+                ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellMin);
+                float3 cellMax = cellMin + new float3(cellSize, cellSize, cellSize);
+
+                // Vérifier si le vertex est trop loin du centre de masse des intersections
+                float distanceToMass = math.length(vertexPos - massPoint);
+                float maxDistance = cellSize * 2.0f; // Autoriser une certaine distance
+
+                if (distanceToMass > maxDistance || math.any(math.isnan(vertexPos)) || math.any(math.isinf(vertexPos)))
                 {
-                    ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellMin);
-                    float3 cellMax = cellMin + new float3(cellSize, cellSize, cellSize);
-                    vertexPos = math.clamp(vertexPos, cellMin, cellMax);
+                    // Fallback vers le centre de masse si le QEF donne une solution aberrante
+                    vertexPos = massPoint;
                 }
+
+                // Contraindre le vertex à l'intérieur de la cellule avec une petite marge
+                vertexPos = math.clamp(vertexPos, cellMin, cellMax);
 
                 vertexPosition = vertexPos;
 
@@ -289,10 +297,10 @@ namespace DualContouring.DualContouring
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float3 SolveQef(NativeArray<float3> positions, NativeArray<float3> normals, int count, float3 massPoint)
         {
-            // On résout le système A^T * A * x = A^T * b
-            // où A est la matrice des normales et b est le vecteur des distances signées
+            // QEF résout: minimiser sum((n_i · (x - p_i))^2)
+            // Équivalent à résoudre: A^T * A * (x - massPoint) = A^T * b
+            // où b_i = n_i · (p_i - massPoint)
 
-            // Construire la matrice A^T * A (matrice 3x3 symétrique)
             float3x3 ata = float3x3.zero;
             float3 atb = float3.zero;
 
@@ -301,26 +309,33 @@ namespace DualContouring.DualContouring
                 float3 n = normals[i];
                 float3 p = positions[i];
 
-                // A^T * A += n * n^T
+                // A^T * A += n ⊗ n (produit tensoriel)
                 ata.c0 += n * n.x;
                 ata.c1 += n * n.y;
                 ata.c2 += n * n.z;
 
-                // A^T * b += n * (n · p)
-                float d = math.dot(n, p);
-                atb += n * d;
+                // Distance signée du massPoint au plan défini par (p, n)
+                float distance = math.dot(n, p - massPoint);
+                atb += n * distance;
             }
 
-            // Résoudre le système linéaire 3x3 en utilisant l'élimination de Gauss avec pivot partiel
-            float3 result = SolveLinearSystem3X3(ata, atb);
+            // Régularisation pour stabilité numérique (évite les matrices singulières)
+            float regularization = 0.001f;
+            ata.c0.x += regularization;
+            ata.c1.y += regularization;
+            ata.c2.z += regularization;
 
-            // Si la solution échoue (matrice singulière), utiliser le centre de masse
-            if (math.any(math.isnan(result)) || math.any(math.isinf(result)))
+            // Résoudre A^T * A * offset = A^T * b
+            float3 offset = SolveLinearSystem3X3(ata, atb);
+
+            // Si la solution échoue, retourner le centre de masse
+            if (math.any(math.isnan(offset)) || math.any(math.isinf(offset)))
             {
                 return massPoint;
             }
 
-            return result;
+            // Le résultat final est massPoint + offset
+            return massPoint + offset;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -16,6 +16,8 @@ namespace DualContouring.DualContouring.Debug.Editor
         private VisualElement _root;
         private Toggle _enabledToggle;
         private Toggle _drawEmptyCellToggle;
+        private Toggle _drawEdgeIntersectionsToggle;
+        private Toggle _drawMassPointToggle;
 
         public override VisualElement CreatePanelContent()
         {
@@ -54,6 +56,20 @@ namespace DualContouring.DualContouring.Debug.Editor
             _drawEmptyCellToggle.RegisterValueChangedCallback(evt => OnDrawEmptyCellChanged(evt.newValue));
             _root.Add(_drawEmptyCellToggle);
 
+            // Toggle pour DrawEdgeIntersections
+            _drawEdgeIntersectionsToggle = new Toggle("Draw Edge Intersections");
+            _drawEdgeIntersectionsToggle.style.color = Color.white;
+            _drawEdgeIntersectionsToggle.style.fontSize = 12;
+            _drawEdgeIntersectionsToggle.RegisterValueChangedCallback(evt => OnDrawEdgeIntersectionsChanged(evt.newValue));
+            _root.Add(_drawEdgeIntersectionsToggle);
+
+            // Toggle pour DrawMassPoint
+            _drawMassPointToggle = new Toggle("Draw Mass Point");
+            _drawMassPointToggle.style.color = Color.white;
+            _drawMassPointToggle.style.fontSize = 12;
+            _drawMassPointToggle.RegisterValueChangedCallback(evt => OnDrawMassPointChanged(evt.newValue));
+            _root.Add(_drawMassPointToggle);
+
             // S'abonner aux mises à jour
             EditorApplication.update += OnEditorUpdate;
 
@@ -71,7 +87,8 @@ namespace DualContouring.DualContouring.Debug.Editor
 
         private void OnEditorUpdate()
         {
-            if (_enabledToggle != null && _drawEmptyCellToggle != null)
+            if (_enabledToggle != null && _drawEmptyCellToggle != null && 
+                _drawEdgeIntersectionsToggle != null && _drawMassPointToggle != null)
             {
                 UpdateToggleValue();
             }
@@ -86,12 +103,18 @@ namespace DualContouring.DualContouring.Debug.Editor
                 _enabledToggle.SetValueWithoutNotify(false);
                 _drawEmptyCellToggle.SetEnabled(false);
                 _drawEmptyCellToggle.SetValueWithoutNotify(false);
+                _drawEdgeIntersectionsToggle.SetEnabled(false);
+                _drawEdgeIntersectionsToggle.SetValueWithoutNotify(false);
+                _drawMassPointToggle.SetEnabled(false);
+                _drawMassPointToggle.SetValueWithoutNotify(false);
                 return;
             }
 
             // En mode Play, activer le toggle
             _enabledToggle.SetEnabled(true);
             _drawEmptyCellToggle.SetEnabled(true);
+            _drawEdgeIntersectionsToggle.SetEnabled(true);
+            _drawMassPointToggle.SetEnabled(true);
 
             EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
             
@@ -104,6 +127,8 @@ namespace DualContouring.DualContouring.Debug.Editor
                 var options = entityManager.GetComponentData<DualContouringVisualizationOptions>(entities[0]);
                 _enabledToggle.SetValueWithoutNotify(options.Enabled);
                 _drawEmptyCellToggle.SetValueWithoutNotify(options.DrawEmptyCell);
+                _drawEdgeIntersectionsToggle.SetValueWithoutNotify(options.DrawEdgeIntersections);
+                _drawMassPointToggle.SetValueWithoutNotify(options.DrawMassPoint);
             }
             
             entities.Dispose();
@@ -148,6 +173,54 @@ namespace DualContouring.DualContouring.Debug.Editor
             {
                 var options = entityManager.GetComponentData<DualContouringVisualizationOptions>(entities[0]);
                 options.DrawEmptyCell = newValue;
+                entityManager.SetComponentData(entities[0], options);
+                
+                // Rafraîchir la SceneView
+                SceneView.RepaintAll();
+            }
+            
+            entities.Dispose();
+        }
+
+        private void OnDrawEdgeIntersectionsChanged(bool newValue)
+        {
+            if (!Application.isPlaying || World.DefaultGameObjectInjectionWorld == null)
+                return;
+
+            EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+
+            // Chercher le singleton via une requête
+            EntityQuery query = entityManager.CreateEntityQuery(typeof(DualContouringVisualizationOptions));
+            Unity.Collections.NativeArray<Entity> entities = query.ToEntityArray(Unity.Collections.Allocator.Temp);
+            
+            if (entities.Length > 0)
+            {
+                var options = entityManager.GetComponentData<DualContouringVisualizationOptions>(entities[0]);
+                options.DrawEdgeIntersections = newValue;
+                entityManager.SetComponentData(entities[0], options);
+                
+                // Rafraîchir la SceneView
+                SceneView.RepaintAll();
+            }
+            
+            entities.Dispose();
+        }
+
+        private void OnDrawMassPointChanged(bool newValue)
+        {
+            if (!Application.isPlaying || World.DefaultGameObjectInjectionWorld == null)
+                return;
+
+            EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+
+            // Chercher le singleton via une requête
+            EntityQuery query = entityManager.CreateEntityQuery(typeof(DualContouringVisualizationOptions));
+            Unity.Collections.NativeArray<Entity> entities = query.ToEntityArray(Unity.Collections.Allocator.Temp);
+            
+            if (entities.Length > 0)
+            {
+                var options = entityManager.GetComponentData<DualContouringVisualizationOptions>(entities[0]);
+                options.DrawMassPoint = newValue;
                 entityManager.SetComponentData(entities[0], options);
                 
                 // Rafraîchir la SceneView

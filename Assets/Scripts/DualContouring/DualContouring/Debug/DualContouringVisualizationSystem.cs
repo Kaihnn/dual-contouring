@@ -44,16 +44,22 @@ namespace DualContouring.DualContouring.Debug
                     // Dessiner toutes les cellules
                     DrawAllCells(cellBuffer, localToWorld.ValueRO);
 
-                    // Dessiner toutes les intersections d'arêtes
-                    DrawAllEdgeIntersections(edgeIntersectionBuffer, localToWorld.ValueRO);
+                    // Dessiner toutes les intersections d'arêtes si activé
+                    if (visualizationOptions.DrawEdgeIntersections)
+                    {
+                        DrawAllEdgeIntersections(edgeIntersectionBuffer, localToWorld.ValueRO);
+                    }
                 }
                 else
                 {
                     // Dessiner uniquement la cellule sélectionnée
                     DrawCell(cellBuffer[selectedIndex], localToWorld.ValueRO, visualizationOptions.DrawEmptyCell);
 
-                    // Dessiner les intersections d'arêtes pour la cellule sélectionnée uniquement
-                    DrawEdgeIntersectionsForCell(edgeIntersectionBuffer, selectedIndex, localToWorld.ValueRO);
+                    // Dessiner les intersections d'arêtes pour la cellule sélectionnée si activé
+                    if (visualizationOptions.DrawEdgeIntersections)
+                    {
+                        DrawEdgeIntersectionsForCell(edgeIntersectionBuffer, selectedIndex, localToWorld.ValueRO, visualizationOptions.DrawMassPoint);
+                    }
                 }
             }
         }
@@ -113,13 +119,39 @@ namespace DualContouring.DualContouring.Debug
             }
         }
 
-        private void DrawEdgeIntersectionsForCell(DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer, int cellIndex, LocalToWorld localToWorld)
+        private void DrawEdgeIntersectionsForCell(DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer, int cellIndex, LocalToWorld localToWorld, bool drawMassPoint)
         {
+            float3 massPoint = float3.zero;
+            int count = 0;
+
             foreach (DualContouringEdgeIntersection edgeIntersection in edgeIntersectionBuffer)
             {
                 if (edgeIntersection.CellIndex == cellIndex)
                 {
                     DrawEdgeIntersection(edgeIntersection, localToWorld);
+                    massPoint += edgeIntersection.Position;
+                    count++;
+                }
+            }
+
+            // Dessiner le centre de masse si activé et s'il y a des intersections
+            if (drawMassPoint && count > 0)
+            {
+                massPoint /= count;
+                float3 worldMassPoint = math.transform(localToWorld.Value, massPoint);
+
+                Gizmos.color = Color.blue;
+                Gizmos.DrawSphere(worldMassPoint, 0.08f);
+
+                // Dessiner des lignes vers les intersections
+                Gizmos.color = new Color(0.5f, 0.5f, 1.0f, 0.5f);
+                foreach (DualContouringEdgeIntersection edgeIntersection in edgeIntersectionBuffer)
+                {
+                    if (edgeIntersection.CellIndex == cellIndex)
+                    {
+                        float3 worldPos = math.transform(localToWorld.Value, edgeIntersection.Position);
+                        Gizmos.DrawLine(worldMassPoint, worldPos);
+                    }
                 }
             }
         }

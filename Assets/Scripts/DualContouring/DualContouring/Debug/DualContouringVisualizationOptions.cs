@@ -6,5 +6,7 @@ namespace DualContouring.DualContouring.Debug
     {
         public bool Enabled;
         public bool DrawEmptyCell;
+        public bool DrawEdgeIntersections;
+        public bool DrawMassPoint;
     }
 }
