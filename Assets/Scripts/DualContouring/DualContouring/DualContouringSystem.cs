@@ -69,16 +69,14 @@ namespace DualContouring.DualContouring
             float cellSize = scalarFieldInfos.CellSize;
             float3 scalarFieldOffset = scalarFieldInfos.ScalarFieldOffset;
 
-            // Calculer l'index de configuration (8 bits, un par coin)
             int config = 0;
 
-            // Les 8 coins d'une cellule en ordre: (0,0,0), (1,0,0), (0,1,0), (1,1,0), (0,0,1), (1,0,1), (0,1,1), (1,1,1)
             for (int i = 0; i < 8; i++)
             {
                 var offset = new int3(
-                    i & 1, // bit 0
-                    (i >> 1) & 1, // bit 1
-                    (i >> 2) & 1 // bit 2
+                    i & 1,
+                    (i >> 1) & 1,
+                    (i >> 2) & 1
                 );
 
                 int3 cornerIndex = cellIndex + offset;
@@ -88,7 +86,6 @@ namespace DualContouring.DualContouring
                 {
                     ScalarFieldItem value = scalarField[scalarIndex];
 
-                    // Si la valeur est positive (à l'intérieur de la surface), mettre le bit à 1
                     if (value.Value >= 0)
                     {
                         config |= 1 << i;
@@ -96,15 +93,12 @@ namespace DualContouring.DualContouring
                 }
             }
 
-            // Si la configuration n'est ni 0 (tout dehors) ni 255 (tout dedans), il y a une surface
             bool hasVertex = config != 0 && config != 255;
 
-            // Calculer la position du vertex (pour l'instant, on utilise le centre de la cellule)
             ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellPosition);
             float3 vertexPosition = cellPosition + new float3(0.5f, 0.5f, 0.5f) * cellSize;
             var cellNormal = new float3(0, 1, 0);
 
-            // Si on a une intersection, calculer une meilleure position du vertex et la normale
             if (hasVertex)
             {
                 DualContouringHelper.CalculateVertexPositionAndNormal(in scalarField,
@@ -115,7 +109,6 @@ namespace DualContouring.DualContouring
                     out cellNormal);
             }
 
-            // Ajouter la cellule au buffer
             cells.Add(new DualContouringCell
             {
                 Position = cellPosition,
