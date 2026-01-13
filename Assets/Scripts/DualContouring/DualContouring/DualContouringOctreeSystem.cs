@@ -77,7 +77,7 @@ namespace DualContouring.DualContouring
                 }
                 else
                 {
-                    ProcessLeafNode(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, node, scalarFieldInfos);
+                    ProcessLeafNode(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, node, octreeNodeInfos, scalarFieldInfos);
                 }
             }
 
@@ -90,12 +90,13 @@ namespace DualContouring.DualContouring
             DynamicBuffer<DualContouringCell> cells,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             OctreeNode node,
+            OctreeNodeInfos octreeNodeInfos,
             ScalarFieldInfos scalarFieldInfos)
         {
             int3 cellIndex = node.Position;
             int3 gridSize = scalarFieldInfos.GridSize;
-            float cellSize = scalarFieldInfos.CellSize;
-            float3 scalarFieldOffset = scalarFieldInfos.ScalarFieldOffset;
+            float cellSize = octreeNodeInfos.MinNodeSize;
+            float3 octreeOffset = octreeNodeInfos.OctreeOffset;
 
             int3 cellGridSize = gridSize - new int3(1, 1, 1);
             if (math.any(cellIndex < 0) || math.any(cellIndex >= cellGridSize))
@@ -129,7 +130,7 @@ namespace DualContouring.DualContouring
 
             bool hasVertex = config != 0 && config != 255;
 
-            ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellPosition);
+            OctreeUtils.GetWorldPositionFromPosition(cellIndex, cellSize, octreeOffset, out float3 cellPosition);
             float3 vertexPosition = cellPosition + new float3(0.5f, 0.5f, 0.5f) * cellSize;
             var cellNormal = new float3(0, 1, 0);
 
