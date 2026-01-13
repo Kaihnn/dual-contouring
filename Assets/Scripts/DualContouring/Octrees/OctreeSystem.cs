@@ -97,6 +97,9 @@ namespace DualContouring.Octrees
                 
                 if (current.Depth >= maxDepth)
                 {
+                    HasSignChange(in scalarField, in gridSize, in current.Min, in current.Max, out float leafValue);
+                    ref OctreeNode leafNode = ref octreeBuffer.ElementAt(current.NodeIndex);
+                    leafNode.Value = leafValue;
                     continue;
                 }
                 
@@ -162,11 +165,11 @@ namespace DualContouring.Octrees
 
             float addedValue = 0f;
             int count = 0;
-            for (int y = min.y; y <= max.y; y++)
+            for (int y = min.y; y < max.y; y++)
             {
-                for (int z = min.z; z <= max.z; z++)
+                for (int z = min.z; z < max.z; z++)
                 {
-                    for (int x = min.x; x <= max.x; x++)
+                    for (int x = min.x; x < max.x; x++)
                     {
                         int index = ScalarFieldUtility.CoordToIndex(x, y, z, gridSize);
                         if (index < 0 || index >= scalarField.Length)
