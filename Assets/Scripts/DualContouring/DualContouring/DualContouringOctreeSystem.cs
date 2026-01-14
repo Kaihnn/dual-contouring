@@ -3,7 +3,6 @@ using DualContouring.DualContouring.Debug;
 using DualContouring.Octrees;
 using DualContouring.ScalarField;
 using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -44,62 +43,42 @@ namespace DualContouring.DualContouring
             in OctreeInfos octreeInfos,
             in ScalarFieldInfos scalarFieldInfos)
         {
-            cellBuffer.Clear();
-            edgeIntersectionBuffer.Clear();
-
             if (octreeBuffer.Length == 0)
             {
                 return;
             }
 
-            NativeList<int> nodesToProcess = new NativeList<int>(math.max(64, octreeBuffer.Length / 8), Allocator.Temp);
-            nodesToProcess.Add(0);
+            cellBuffer.Clear();
+            edgeIntersectionBuffer.Clear();
 
-            while (nodesToProcess.Length > 0)
+            int3 cellGridSize = scalarFieldInfos.GridSize - new int3(1, 1, 1);
+
+            for (int y = 0; y < cellGridSize.y; y++)
             {
-                int lastIndex = nodesToProcess.Length - 1;
-                int nodeIndex = nodesToProcess[lastIndex];
-                nodesToProcess.RemoveAtSwapBack(lastIndex);
-
-                if (nodeIndex < 0 || nodeIndex >= octreeBuffer.Length)
+                for (int z = 0; z < cellGridSize.z; z++)
                 {
-                    continue;
-                }
-
-                OctreeNode node = octreeBuffer[nodeIndex];
-
-                if (node.ChildIndex >= 0)
-                {
-                    for (int i = 0; i < 8; i++)
+                    for (int x = 0; x < cellGridSize.x; x++)
                     {
-                        nodesToProcess.Add(node.ChildIndex + i);
+                        ProcessCell(octreeBuffer, scalarFieldBuffer, cellBuffer, cellGridSize, new int3(x, y, z), edgeIntersectionBuffer, octreeInfos, scalarFieldInfos);
                     }
                 }
-                else
-                {
-                    ProcessLeafNode(octreeBuffer, scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, node, octreeInfos, scalarFieldInfos);
-                }
             }
-
-            nodesToProcess.Dispose();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ProcessLeafNode(
+        private void ProcessCell(
             in DynamicBuffer<OctreeNode> octreeBuffer,
-            in DynamicBuffer<ScalarFieldItem> scalarField,
-            DynamicBuffer<DualContouringCell> cells,
-            DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
-            OctreeNode node,
+            in DynamicBuffer<ScalarFieldItem> scalarFieldBuffer,
+            DynamicBuffer<DualContouringCell> cellsBuffer,
+            int3 cellGridSize,
+            int3 cellPosition,
+            DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer,
             OctreeInfos octreeInfos,
             ScalarFieldInfos scalarFieldInfos)
         {
-            int3 cellPosition = node.Position;
-            int3 gridSize = scalarFieldInfos.GridSize;
             float cellSize = octreeInfos.MinNodeSize;
             float3 octreeOffset = octreeInfos.OctreeOffset;
 
-            int3 cellGridSize = gridSize - new int3(1, 1, 1);
             if (math.any(cellPosition < 0) || math.any(cellPosition >= cellGridSize))
             {
                 return;
@@ -121,7 +100,6 @@ namespace DualContouring.DualContouring
                 {
                     config |= 1 << i;
                 }
-
             }
 
             bool hasVertex = config != 0 && config != 255;
@@ -132,15 +110,15 @@ namespace DualContouring.DualContouring
 
             if (hasVertex)
             {
-                DualContouringHelper.CalculateVertexPositionAndNormal(in scalarField,
-                    ref edgeIntersections,
+                DualContouringHelper.CalculateVertexPositionAndNormal(in scalarFieldBuffer,
+                    ref edgeIntersectionBuffer,
                     in cellPosition,
                     in scalarFieldInfos,
                     out vertexPosition,
                     out cellNormal);
             }
 
-            cells.Add(new DualContouringCell
+            cellsBuffer.Add(new DualContouringCell
             {
                 Position = worldPosition,
                 Size = cellSize,
