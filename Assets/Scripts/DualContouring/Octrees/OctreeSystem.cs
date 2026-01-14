@@ -38,6 +38,7 @@ namespace DualContouring.Octrees
             octreeInfos.MaxDepth = maxDepth;
             octreeInfos.MinNodeSize = scalarFieldInfos.CellSize;
             octreeInfos.MaxNodeSize = math.cmax(scalarFieldInfos.GridSize) * scalarFieldInfos.CellSize;
+            octreeInfos.GridSize = scalarFieldInfos.GridSize;
 
             int3 rootMin = int3.zero;
             int3 rootMax = scalarFieldInfos.GridSize;

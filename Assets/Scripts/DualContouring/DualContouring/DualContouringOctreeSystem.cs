@@ -51,7 +51,7 @@ namespace DualContouring.DualContouring
             cellBuffer.Clear();
             edgeIntersectionBuffer.Clear();
 
-            int3 cellGridSize = scalarFieldInfos.GridSize - new int3(1, 1, 1);
+            int3 cellGridSize = octreeInfos.GridSize - new int3(1, 1, 1);
 
             for (int y = 0; y < cellGridSize.y; y++)
             {
