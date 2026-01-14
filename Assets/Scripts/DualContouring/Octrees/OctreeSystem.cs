@@ -22,7 +22,7 @@ namespace DualContouring.Octrees
             DynamicBuffer<ScalarFieldItem> scalarFieldBuffer,
             DynamicBuffer<OctreeNode> octreeBuffer,
             in ScalarFieldInfos scalarFieldInfos,
-            ref OctreeNodeInfos octreeNodeInfos)
+            ref OctreeInfos octreeInfos)
         {
             octreeBuffer.Clear();
 
@@ -34,10 +34,10 @@ namespace DualContouring.Octrees
             int3 gridSize = scalarFieldInfos.GridSize;
             int maxDepth = CalculateMaxDepth(in gridSize);
 
-            octreeNodeInfos.OctreeOffset = scalarFieldInfos.ScalarFieldOffset;
-            octreeNodeInfos.MaxDepth = maxDepth;
-            octreeNodeInfos.MinNodeSize = scalarFieldInfos.CellSize;
-            octreeNodeInfos.MaxNodeSize = math.cmax(scalarFieldInfos.GridSize) * scalarFieldInfos.CellSize;
+            octreeInfos.OctreeOffset = scalarFieldInfos.ScalarFieldOffset;
+            octreeInfos.MaxDepth = maxDepth;
+            octreeInfos.MinNodeSize = scalarFieldInfos.CellSize;
+            octreeInfos.MaxNodeSize = math.cmax(scalarFieldInfos.GridSize) * scalarFieldInfos.CellSize;
 
             int3 rootMin = int3.zero;
             int3 rootMax = scalarFieldInfos.GridSize;

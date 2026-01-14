@@ -27,12 +27,12 @@ namespace DualContouring.Octrees.Debug
                 return;
             }
 
-            foreach ((DynamicBuffer<OctreeNode> octreeBuffer, DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, RefRO<LocalToWorld> localToWorld, RefRO<OctreeNodeInfos> octreeNodeInfos) in SystemAPI
+            foreach ((DynamicBuffer<OctreeNode> octreeBuffer, DynamicBuffer<ScalarFieldItem> scalarFieldBuffer, RefRO<LocalToWorld> localToWorld, RefRO<OctreeInfos> octreeNodeInfos) in SystemAPI
                          .Query<
                              DynamicBuffer<OctreeNode>,
                              DynamicBuffer<ScalarFieldItem>,
                              RefRO<LocalToWorld>,
-                             RefRO<OctreeNodeInfos>>()
+                             RefRO<OctreeInfos>>()
                          .WithAll<ScalarFieldSelected>())
             {
                 if (octreeBuffer.Length == 0 || scalarFieldBuffer.Length == 0)
@@ -50,7 +50,7 @@ namespace DualContouring.Octrees.Debug
             int depth,
             LocalToWorld localToWorld,
             OctreeVisualizationOptions options,
-            OctreeNodeInfos octreeNodeInfos)
+            OctreeInfos octreeInfos)
         {
             if (nodeIndex < 0 || nodeIndex >= octreeBuffer.Length)
             {
@@ -60,15 +60,15 @@ namespace DualContouring.Octrees.Debug
             OctreeNode node = octreeBuffer[nodeIndex];
             float3 position = node.Position;
             OctreeUtils.GetSizeFromDepth(
-                octreeNodeInfos.MaxDepth,
+                octreeInfos.MaxDepth,
                 depth,
-                octreeNodeInfos.MinNodeSize,
+                octreeInfos.MinNodeSize,
                 out float size);
 
             OctreeUtils.GetWorldPositionFromPosition(
                 node.Position,
-                octreeNodeInfos.MinNodeSize,
-                octreeNodeInfos.OctreeOffset,
+                octreeInfos.MinNodeSize,
+                octreeInfos.OctreeOffset,
                 out float3 worldPosition);
 
             if (depth >= options.Depth.x && depth <= options.Depth.y)
@@ -101,7 +101,7 @@ namespace DualContouring.Octrees.Debug
                 for (int i = 0; i < 8; i++)
                 {
                     int childIndex = node.ChildIndex + i;
-                    DrawOctreeNode(octreeBuffer, childIndex, depth + 1, localToWorld, options, octreeNodeInfos);
+                    DrawOctreeNode(octreeBuffer, childIndex, depth + 1, localToWorld, options, octreeInfos);
                 }
             }
         }

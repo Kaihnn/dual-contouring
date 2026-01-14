@@ -20,7 +20,7 @@ namespace DualContouring.Octrees
         }
 
         [BurstCompile]
-        public static float GetValueAtPosition(in DynamicBuffer<OctreeNode> octreeBuffer, in OctreeNodeInfos octreeInfos, in int3 position, float defaultValue = 0f)
+        public static float GetValueAtPosition(in DynamicBuffer<OctreeNode> octreeBuffer, in OctreeInfos octreeInfos, in int3 position, float defaultValue = -1f)
         {
             if (octreeBuffer.Length == 0)
             {

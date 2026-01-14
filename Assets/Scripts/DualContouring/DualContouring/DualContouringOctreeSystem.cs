@@ -41,7 +41,7 @@ namespace DualContouring.DualContouring
             ref DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer,
             in DynamicBuffer<OctreeNode> octreeBuffer,
             in DynamicBuffer<ScalarFieldItem> scalarFieldBuffer,
-            in OctreeNodeInfos octreeNodeInfos,
+            in OctreeInfos octreeInfos,
             in ScalarFieldInfos scalarFieldInfos)
         {
             cellBuffer.Clear();
@@ -77,7 +77,7 @@ namespace DualContouring.DualContouring
                 }
                 else
                 {
-                    ProcessLeafNode(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, node, octreeNodeInfos, scalarFieldInfos);
+                    ProcessLeafNode(octreeBuffer, scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, node, octreeInfos, scalarFieldInfos);
                 }
             }
 
@@ -86,20 +86,21 @@ namespace DualContouring.DualContouring
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ProcessLeafNode(
+            in DynamicBuffer<OctreeNode> octreeBuffer,
             in DynamicBuffer<ScalarFieldItem> scalarField,
             DynamicBuffer<DualContouringCell> cells,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             OctreeNode node,
-            OctreeNodeInfos octreeNodeInfos,
+            OctreeInfos octreeInfos,
             ScalarFieldInfos scalarFieldInfos)
         {
-            int3 cellIndex = node.Position;
+            int3 cellPosition = node.Position;
             int3 gridSize = scalarFieldInfos.GridSize;
-            float cellSize = octreeNodeInfos.MinNodeSize;
-            float3 octreeOffset = octreeNodeInfos.OctreeOffset;
+            float cellSize = octreeInfos.MinNodeSize;
+            float3 octreeOffset = octreeInfos.OctreeOffset;
 
             int3 cellGridSize = gridSize - new int3(1, 1, 1);
-            if (math.any(cellIndex < 0) || math.any(cellIndex >= cellGridSize))
+            if (math.any(cellPosition < 0) || math.any(cellPosition >= cellGridSize))
             {
                 return;
             }
@@ -114,31 +115,26 @@ namespace DualContouring.DualContouring
                     (i >> 2) & 1
                 );
 
-                int3 cornerIndex = cellIndex + offset;
-                int scalarIndex = ScalarFieldUtility.CoordToIndex(cornerIndex, gridSize);
-
-                if (scalarIndex >= 0 && scalarIndex < scalarField.Length)
+                int3 cornerPosition = cellPosition + offset;
+                float valueAtPosition = OctreeUtils.GetValueAtPosition(octreeBuffer, octreeInfos, cornerPosition);
+                if (valueAtPosition >= 0)
                 {
-                    ScalarFieldItem value = scalarField[scalarIndex];
-
-                    if (value.Value >= 0)
-                    {
-                        config |= 1 << i;
-                    }
+                    config |= 1 << i;
                 }
+
             }
 
             bool hasVertex = config != 0 && config != 255;
 
-            OctreeUtils.GetWorldPositionFromPosition(cellIndex, cellSize, octreeOffset, out float3 cellPosition);
-            float3 vertexPosition = cellPosition + new float3(0.5f, 0.5f, 0.5f) * cellSize;
+            OctreeUtils.GetWorldPositionFromPosition(cellPosition, cellSize, octreeOffset, out float3 worldPosition);
+            float3 vertexPosition = worldPosition + new float3(0.5f, 0.5f, 0.5f) * cellSize;
             var cellNormal = new float3(0, 1, 0);
 
             if (hasVertex)
             {
                 DualContouringHelper.CalculateVertexPositionAndNormal(in scalarField,
                     ref edgeIntersections,
-                    in cellIndex,
+                    in cellPosition,
                     in scalarFieldInfos,
                     out vertexPosition,
                     out cellNormal);
@@ -146,12 +142,12 @@ namespace DualContouring.DualContouring
 
             cells.Add(new DualContouringCell
             {
-                Position = cellPosition,
+                Position = worldPosition,
                 Size = cellSize,
                 HasVertex = hasVertex,
                 VertexPosition = vertexPosition,
                 Normal = cellNormal,
-                GridIndex = cellIndex
+                GridIndex = cellPosition
             });
         }
     }

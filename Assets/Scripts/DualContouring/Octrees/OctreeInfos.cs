@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace DualContouring.Octrees
 {
-    public struct OctreeNodeInfos : IComponentData
+    public struct OctreeInfos : IComponentData
     {
         public float3 OctreeOffset;
         public int MaxDepth;
