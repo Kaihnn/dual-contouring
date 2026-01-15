@@ -22,10 +22,10 @@ namespace DualContouring.Octrees
 
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int3 WorldPositionToGridPosition(in float3 worldPosition, in float minNodeSize, in float3 octreeOffset)
+        public static void WorldPositionToGridPosition(in float3 worldPosition, in float minNodeSize, in float3 octreeOffset, out int3 gridPosition)
         {
             float3 localPos = (worldPosition - octreeOffset) / minNodeSize;
-            return new int3(
+            gridPosition = new int3(
                 (int)math.floor(localPos.x),
                 (int)math.floor(localPos.y),
                 (int)math.floor(localPos.z)

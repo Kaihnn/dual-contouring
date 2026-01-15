@@ -192,7 +192,7 @@ namespace DualContouring.DualContouring
 
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int CoordToIndex(int3 coord, int3 gridSize)
+        private static int CoordToIndex(in int3 coord, in int3 gridSize)
         {
             return coord.x + coord.y * gridSize.x + coord.z * gridSize.x * gridSize.y;
         }
