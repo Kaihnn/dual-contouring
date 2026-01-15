@@ -1,7 +1,6 @@
 using System.Runtime.CompilerServices;
 using DualContouring.DualContouring.Debug;
 using DualContouring.Octrees;
-using DualContouring.ScalarField;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -39,9 +38,7 @@ namespace DualContouring.DualContouring
             ref DynamicBuffer<DualContouringCell> cellBuffer,
             ref DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer,
             in DynamicBuffer<OctreeNode> octreeBuffer,
-            in DynamicBuffer<ScalarFieldItem> scalarFieldBuffer,
-            in OctreeInfos octreeInfos,
-            in ScalarFieldInfos scalarFieldInfos)
+            in OctreeInfos octreeInfos)
         {
             if (octreeBuffer.Length == 0)
             {
@@ -59,7 +56,7 @@ namespace DualContouring.DualContouring
                 {
                     for (int x = 0; x < cellGridSize.x; x++)
                     {
-                        ProcessCell(octreeBuffer, scalarFieldBuffer, cellBuffer, cellGridSize, new int3(x, y, z), edgeIntersectionBuffer, octreeInfos, scalarFieldInfos);
+                        ProcessCell(octreeBuffer, cellBuffer, cellGridSize, new int3(x, y, z), edgeIntersectionBuffer, octreeInfos);
                     }
                 }
             }
@@ -68,13 +65,11 @@ namespace DualContouring.DualContouring
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ProcessCell(
             in DynamicBuffer<OctreeNode> octreeBuffer,
-            in DynamicBuffer<ScalarFieldItem> scalarFieldBuffer,
             DynamicBuffer<DualContouringCell> cellsBuffer,
             int3 cellGridSize,
             int3 cellPosition,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer,
-            OctreeInfos octreeInfos,
-            ScalarFieldInfos scalarFieldInfos)
+            OctreeInfos octreeInfos)
         {
             float cellSize = octreeInfos.MinNodeSize;
             float3 octreeOffset = octreeInfos.OctreeOffset;
@@ -110,10 +105,10 @@ namespace DualContouring.DualContouring
 
             if (hasVertex)
             {
-                DualContouringHelper.CalculateVertexPositionAndNormal(in scalarFieldBuffer,
+                DualContouringOctreeHelper.CalculateVertexPositionAndNormal(in octreeBuffer,
                     ref edgeIntersectionBuffer,
                     in cellPosition,
-                    in scalarFieldInfos,
+                    in octreeInfos,
                     out vertexPosition,
                     out cellNormal);
             }
