@@ -66,6 +66,24 @@ Controlled by `DualContouringOptions.Type`:
 - Use `SystemAPI.Query` for ECS queries
 - Prefer `float3`, `int3`, `quaternion` from Unity.Mathematics
 
+### Burst Compilation Rules
+**IMPORTANT**: In Burst-compiled code:
+
+1. **Struct parameters** (`int3`, `float3`, etc.) must use `in`, `ref`, or `out` keywords
+2. **Struct return types** are NOT allowed - use `out` parameter instead
+
+```csharp
+// WRONG - BC1064 errors
+private static int CoordToIndex(int3 coord, int3 gridSize)
+public static int3 WorldPositionToGrid(in float3 pos)
+
+// CORRECT
+private static int CoordToIndex(in int3 coord, in int3 gridSize)
+public static void WorldPositionToGrid(in float3 pos, out int3 gridPos)
+```
+
+This applies to all static methods in `[BurstCompile]` classes/structs.
+
 ### File Management
 - Never create .meta files - Unity generates them automatically
 - Only create .cs files
