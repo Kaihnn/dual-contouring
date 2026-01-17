@@ -2,11 +2,18 @@ using System.Runtime.CompilerServices;
 using DualContouring.DualContouring.Debug;
 using DualContouring.Octrees;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
 namespace DualContouring.DualContouring
 {
+    struct OctreeTraversalNode
+    {
+        public int NodeIndex;
+        public int Depth;
+    }
+
     [BurstCompile]
     public partial struct DualContouringOctreeSystem : ISystem
     {
@@ -49,17 +56,43 @@ namespace DualContouring.DualContouring
             edgeIntersectionBuffer.Clear();
 
             int3 cellGridSize = octreeInfos.GridSize - new int3(1, 1, 1);
+            int maxDepth = octreeInfos.MaxDepth;
 
-            for (int y = 0; y < cellGridSize.y; y++)
+            var nodesToVisit = new NativeList<OctreeTraversalNode>(64, Allocator.Temp);
+            nodesToVisit.Add(new OctreeTraversalNode { NodeIndex = 0, Depth = 0 });
+
+            while (nodesToVisit.Length > 0)
             {
-                for (int z = 0; z < cellGridSize.z; z++)
+                int lastIndex = nodesToVisit.Length - 1;
+                OctreeTraversalNode current = nodesToVisit[lastIndex];
+                nodesToVisit.RemoveAtSwapBack(lastIndex);
+
+                OctreeNode node = octreeBuffer[current.NodeIndex];
+
+                if (node.ChildIndex < 0)
                 {
-                    for (int x = 0; x < cellGridSize.x; x++)
+                    // Leaf node: only process if at maxDepth (size 1 cells)
+                    // Leaves before maxDepth are uniform regions with no surface
+                    if (current.Depth >= maxDepth)
                     {
-                        ProcessCell(octreeBuffer, cellBuffer, cellGridSize, new int3(x, y, z), edgeIntersectionBuffer, octreeInfos);
+                        ProcessCell(octreeBuffer, cellBuffer, cellGridSize, node.Position, edgeIntersectionBuffer, octreeInfos);
+                    }
+                }
+                else
+                {
+                    int childDepth = current.Depth + 1;
+                    for (int i = 0; i < 8; i++)
+                    {
+                        nodesToVisit.Add(new OctreeTraversalNode
+                        {
+                            NodeIndex = node.ChildIndex + i,
+                            Depth = childDepth
+                        });
                     }
                 }
             }
+
+            nodesToVisit.Dispose();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -111,17 +144,17 @@ namespace DualContouring.DualContouring
                     in octreeInfos,
                     out vertexPosition,
                     out cellNormal);
-            }
 
-            cellsBuffer.Add(new DualContouringCell
-            {
-                Position = worldPosition,
-                Size = cellSize,
-                HasVertex = hasVertex,
-                VertexPosition = vertexPosition,
-                Normal = cellNormal,
-                GridIndex = cellPosition
-            });
+                cellsBuffer.Add(new DualContouringCell
+                {
+                    Position = worldPosition,
+                    Size = cellSize,
+                    HasVertex = true,
+                    VertexPosition = vertexPosition,
+                    Normal = cellNormal,
+                    GridIndex = cellPosition
+                });
+            }
         }
     }
 }
