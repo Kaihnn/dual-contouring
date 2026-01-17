@@ -27,7 +27,7 @@ namespace DualContouring.Octrees
                 Entity entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddBuffer<OctreeNode>(entity);
 
-                AddComponent(entity, new OctreeNodeInfos());
+                AddComponent(entity, new OctreeInfos());
             }
         }
     }

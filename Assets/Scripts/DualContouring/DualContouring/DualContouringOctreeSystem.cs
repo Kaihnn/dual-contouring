@@ -1,7 +1,6 @@
 using System.Runtime.CompilerServices;
 using DualContouring.DualContouring.Debug;
 using DualContouring.Octrees;
-using DualContouring.ScalarField;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -9,6 +8,12 @@ using Unity.Mathematics;
 
 namespace DualContouring.DualContouring
 {
+    struct OctreeTraversalNode
+    {
+        public int NodeIndex;
+        public int Depth;
+    }
+
     [BurstCompile]
     public partial struct DualContouringOctreeSystem : ISystem
     {
@@ -40,65 +45,69 @@ namespace DualContouring.DualContouring
             ref DynamicBuffer<DualContouringCell> cellBuffer,
             ref DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer,
             in DynamicBuffer<OctreeNode> octreeBuffer,
-            in DynamicBuffer<ScalarFieldItem> scalarFieldBuffer,
-            in OctreeNodeInfos octreeNodeInfos,
-            in ScalarFieldInfos scalarFieldInfos)
+            in OctreeInfos octreeInfos)
         {
-            cellBuffer.Clear();
-            edgeIntersectionBuffer.Clear();
-
             if (octreeBuffer.Length == 0)
             {
                 return;
             }
 
-            NativeList<int> nodesToProcess = new NativeList<int>(math.max(64, octreeBuffer.Length / 8), Allocator.Temp);
-            nodesToProcess.Add(0);
+            cellBuffer.Clear();
+            edgeIntersectionBuffer.Clear();
 
-            while (nodesToProcess.Length > 0)
+            int3 cellGridSize = octreeInfos.GridSize - new int3(1, 1, 1);
+            int maxDepth = octreeInfos.MaxDepth;
+
+            var nodesToVisit = new NativeList<OctreeTraversalNode>(64, Allocator.Temp);
+            nodesToVisit.Add(new OctreeTraversalNode { NodeIndex = 0, Depth = 0 });
+
+            while (nodesToVisit.Length > 0)
             {
-                int lastIndex = nodesToProcess.Length - 1;
-                int nodeIndex = nodesToProcess[lastIndex];
-                nodesToProcess.RemoveAtSwapBack(lastIndex);
+                int lastIndex = nodesToVisit.Length - 1;
+                OctreeTraversalNode current = nodesToVisit[lastIndex];
+                nodesToVisit.RemoveAtSwapBack(lastIndex);
 
-                if (nodeIndex < 0 || nodeIndex >= octreeBuffer.Length)
+                OctreeNode node = octreeBuffer[current.NodeIndex];
+
+                if (node.ChildIndex < 0)
                 {
-                    continue;
-                }
-
-                OctreeNode node = octreeBuffer[nodeIndex];
-
-                if (node.ChildIndex >= 0)
-                {
-                    for (int i = 0; i < 8; i++)
+                    // Leaf node: only process if at maxDepth (size 1 cells)
+                    // Leaves before maxDepth are uniform regions with no surface
+                    if (current.Depth >= maxDepth)
                     {
-                        nodesToProcess.Add(node.ChildIndex + i);
+                        ProcessCell(octreeBuffer, cellBuffer, cellGridSize, node.Position, edgeIntersectionBuffer, octreeInfos);
                     }
                 }
                 else
                 {
-                    ProcessLeafNode(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, node, scalarFieldInfos);
+                    int childDepth = current.Depth + 1;
+                    for (int i = 0; i < 8; i++)
+                    {
+                        nodesToVisit.Add(new OctreeTraversalNode
+                        {
+                            NodeIndex = node.ChildIndex + i,
+                            Depth = childDepth
+                        });
+                    }
                 }
             }
 
-            nodesToProcess.Dispose();
+            nodesToVisit.Dispose();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ProcessLeafNode(
-            in DynamicBuffer<ScalarFieldItem> scalarField,
-            DynamicBuffer<DualContouringCell> cells,
-            DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
-            OctreeNode node,
-            ScalarFieldInfos scalarFieldInfos)
+        private void ProcessCell(
+            in DynamicBuffer<OctreeNode> octreeBuffer,
+            DynamicBuffer<DualContouringCell> cellsBuffer,
+            int3 cellGridSize,
+            int3 cellPosition,
+            DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer,
+            OctreeInfos octreeInfos)
         {
-            int3 cellIndex = node.Position;
-            int3 gridSize = scalarFieldInfos.GridSize;
-            float cellSize = scalarFieldInfos.CellSize;
-            float3 scalarFieldOffset = scalarFieldInfos.ScalarFieldOffset;
+            float cellSize = octreeInfos.MinNodeSize;
+            float3 octreeOffset = octreeInfos.OctreeOffset;
 
-            int3 cellGridSize = gridSize - new int3(1, 1, 1);
-            if (math.any(cellIndex < 0) || math.any(cellIndex >= cellGridSize))
+            if (math.any(cellPosition < 0) || math.any(cellPosition >= cellGridSize))
             {
                 return;
             }
@@ -113,45 +122,39 @@ namespace DualContouring.DualContouring
                     (i >> 2) & 1
                 );
 
-                int3 cornerIndex = cellIndex + offset;
-                int scalarIndex = ScalarFieldUtility.CoordToIndex(cornerIndex, gridSize);
-
-                if (scalarIndex >= 0 && scalarIndex < scalarField.Length)
+                int3 cornerPosition = cellPosition + offset;
+                float valueAtPosition = OctreeUtils.GetValueAtPosition(octreeBuffer, octreeInfos, cornerPosition);
+                if (valueAtPosition >= 0)
                 {
-                    ScalarFieldItem value = scalarField[scalarIndex];
-
-                    if (value.Value >= 0)
-                    {
-                        config |= 1 << i;
-                    }
+                    config |= 1 << i;
                 }
             }
 
             bool hasVertex = config != 0 && config != 255;
 
-            ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellPosition);
-            float3 vertexPosition = cellPosition + new float3(0.5f, 0.5f, 0.5f) * cellSize;
+            OctreeUtils.GetWorldPositionFromPosition(cellPosition, cellSize, octreeOffset, out float3 worldPosition);
+            float3 vertexPosition = worldPosition + new float3(0.5f, 0.5f, 0.5f) * cellSize;
             var cellNormal = new float3(0, 1, 0);
 
             if (hasVertex)
             {
-                DualContouringHelper.CalculateVertexPositionAndNormal(in scalarField,
-                    ref edgeIntersections,
-                    in cellIndex,
-                    in scalarFieldInfos,
+                DualContouringOctreeHelper.CalculateVertexPositionAndNormal(in octreeBuffer,
+                    ref edgeIntersectionBuffer,
+                    in cellPosition,
+                    in octreeInfos,
                     out vertexPosition,
                     out cellNormal);
-            }
 
-            cells.Add(new DualContouringCell
-            {
-                Position = cellPosition,
-                Size = cellSize,
-                HasVertex = hasVertex,
-                VertexPosition = vertexPosition,
-                Normal = cellNormal,
-                GridIndex = cellIndex
-            });
+                cellsBuffer.Add(new DualContouringCell
+                {
+                    Position = worldPosition,
+                    Size = cellSize,
+                    HasVertex = true,
+                    VertexPosition = vertexPosition,
+                    Normal = cellNormal,
+                    GridIndex = cellPosition
+                });
+            }
         }
     }
 }

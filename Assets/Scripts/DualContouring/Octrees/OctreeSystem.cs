@@ -22,7 +22,7 @@ namespace DualContouring.Octrees
             DynamicBuffer<ScalarFieldItem> scalarFieldBuffer,
             DynamicBuffer<OctreeNode> octreeBuffer,
             in ScalarFieldInfos scalarFieldInfos,
-            ref OctreeNodeInfos octreeNodeInfos)
+            ref OctreeInfos octreeInfos)
         {
             octreeBuffer.Clear();
 
@@ -34,10 +34,11 @@ namespace DualContouring.Octrees
             int3 gridSize = scalarFieldInfos.GridSize;
             int maxDepth = CalculateMaxDepth(in gridSize);
 
-            octreeNodeInfos.OctreeOffset = scalarFieldInfos.ScalarFieldOffset;
-            octreeNodeInfos.MaxDepth = maxDepth;
-            octreeNodeInfos.MinNodeSize = scalarFieldInfos.CellSize;
-            octreeNodeInfos.MaxNodeSize = math.cmax(scalarFieldInfos.GridSize) * scalarFieldInfos.CellSize;
+            octreeInfos.OctreeOffset = scalarFieldInfos.ScalarFieldOffset;
+            octreeInfos.MaxDepth = maxDepth;
+            octreeInfos.MinNodeSize = scalarFieldInfos.CellSize;
+            octreeInfos.MaxNodeSize = math.cmax(scalarFieldInfos.GridSize) * scalarFieldInfos.CellSize;
+            octreeInfos.GridSize = scalarFieldInfos.GridSize;
 
             int3 rootMin = int3.zero;
             int3 rootMax = scalarFieldInfos.GridSize;
@@ -97,10 +98,24 @@ namespace DualContouring.Octrees
                 
                 if (current.Depth >= maxDepth)
                 {
+                    AnalyzeNodeValues(in scalarField, in gridSize, in current.Min, in current.Max, out float leafValue, out _, out _);
+                    ref OctreeNode leafNode = ref octreeBuffer.ElementAt(current.NodeIndex);
+                    
+                    int cornerIndex = ScalarFieldUtility.CoordToIndex(current.Min, gridSize);
+                    if (cornerIndex >= 0 && cornerIndex < scalarField.Length)
+                    {
+                        leafNode.Value = scalarField[cornerIndex].Value;
+                    }
+                    else
+                    {
+                        leafNode.Value = leafValue;
+                    }
                     continue;
                 }
                 
-                if (!HasSignChange(in scalarField, in gridSize, in current.Min, in current.Max, out float sampledValue))
+                AnalyzeNodeValues(in scalarField, in gridSize, in current.Min, in current.Max, out float sampledValue, out bool hasSignChange, out bool hasVariation);
+                
+                if (!hasSignChange && !hasVariation)
                 {
                     ref OctreeNode node = ref octreeBuffer.ElementAt(current.NodeIndex);
                     node.Value = sampledValue;
@@ -150,23 +165,31 @@ namespace DualContouring.Octrees
         }
         
         [BurstCompile]
-        static bool HasSignChange(
+        static void AnalyzeNodeValues(
             in DynamicBuffer<ScalarFieldItem> scalarField,
             in int3 gridSize,
             in int3 min,
             in int3 max,
-            out float sampledValue)
+            out float averageValue,
+            out bool hasSignChange,
+            out bool hasVariation)
         {
-            bool hasPositive = false;
-            bool hasNegative = false;
+            hasSignChange = false;
+            hasVariation = false;
+            averageValue = 0f;
 
             float addedValue = 0f;
+            float minValue = float.MaxValue;
+            float maxValue = float.MinValue;
+            bool hasPositive = false;
+            bool hasNegative = false;
             int count = 0;
-            for (int y = min.y; y <= max.y; y++)
+
+            for (int y = min.y; y < max.y; y++)
             {
-                for (int z = min.z; z <= max.z; z++)
+                for (int z = min.z; z < max.z; z++)
                 {
-                    for (int x = min.x; x <= max.x; x++)
+                    for (int x = min.x; x < max.x; x++)
                     {
                         int index = ScalarFieldUtility.CoordToIndex(x, y, z, gridSize);
                         if (index < 0 || index >= scalarField.Length)
@@ -178,6 +201,10 @@ namespace DualContouring.Octrees
 
                         addedValue += value;
                         count++;
+
+                        minValue = math.min(minValue, value);
+                        maxValue = math.max(maxValue, value);
+
                         if (value >= 0)
                         {
                             hasPositive = true;
@@ -190,8 +217,15 @@ namespace DualContouring.Octrees
                 }
             }
 
-            sampledValue = count != 0 ? addedValue / count : 0f;
-            return hasPositive && hasNegative;
+            if (count > 0)
+            {
+                averageValue = addedValue / count;
+                hasSignChange = hasPositive && hasNegative;
+                
+                float valueRange = maxValue - minValue;
+                float varianceThreshold = 0.01f;
+                hasVariation = valueRange > varianceThreshold;
+            }
         }
     }
 
