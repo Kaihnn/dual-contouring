@@ -1,6 +1,6 @@
 {
     "name": "DualContouring",
-    "rootNamespace": "DualContouring",
+    "rootNamespace": "",
     "references": [
         "Unity.Entities",
         "Unity.Mathematics",
