@@ -17,11 +17,12 @@ namespace DualContouring.DualContouring
             ref DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             in int3 cellIndex,
             in ScalarFieldInfos scalarFieldInfos,
+            in float cellSize,
             out float3 vertexPosition,
             out float3 cellNormal)
         {
             int3 gridSize = scalarFieldInfos.GridSize;
-            float cellSize = scalarFieldInfos.CellSize;
+            float baseCellSize = scalarFieldInfos.CellSize;
             float3 scalarFieldOffset = scalarFieldInfos.ScalarFieldOffset;
 
             vertexPosition = float3.zero;
@@ -35,15 +36,18 @@ namespace DualContouring.DualContouring
             int count = 0;
             float3 massPoint = float3.zero;
             float3 normalSum = float3.zero;
+            
+            // Calculer le nombre de cellules de base que couvre cette cellule LOD
+            int cellStride = (int)math.round(cellSize / baseCellSize);
 
             // Arêtes parallèles à X (4)
-            for (int y = 0; y < 2; y++)
+            for (int y = 0; y <= cellStride; y += cellStride)
             {
-                for (int z = 0; z < 2; z++)
+                for (int z = 0; z <= cellStride; z += cellStride)
                 {
                     if (TryGetEdgeIntersection(scalarField,
                             cellIndex + new int3(0, y, z),
-                            cellIndex + new int3(1, y, z),
+                            cellIndex + new int3(cellStride, y, z),
                             out float3 intersection,
                             out float3 normal,
                             scalarFieldInfos))
@@ -65,13 +69,13 @@ namespace DualContouring.DualContouring
             }
 
             // Arêtes parallèles à Y (4)
-            for (int x = 0; x < 2; x++)
+            for (int x = 0; x <= cellStride; x += cellStride)
             {
-                for (int z = 0; z < 2; z++)
+                for (int z = 0; z <= cellStride; z += cellStride)
                 {
                     if (TryGetEdgeIntersection(scalarField,
                             cellIndex + new int3(x, 0, z),
-                            cellIndex + new int3(x, 1, z),
+                            cellIndex + new int3(x, cellStride, z),
                             out float3 intersection,
                             out float3 normal,
                             scalarFieldInfos))
@@ -93,13 +97,13 @@ namespace DualContouring.DualContouring
             }
 
             // Arêtes parallèles à Z (4)
-            for (int x = 0; x < 2; x++)
+            for (int x = 0; x <= cellStride; x += cellStride)
             {
-                for (int y = 0; y < 2; y++)
+                for (int y = 0; y <= cellStride; y += cellStride)
                 {
                     if (TryGetEdgeIntersection(scalarField,
                             cellIndex + new int3(x, y, 0),
-                            cellIndex + new int3(x, y, 1),
+                            cellIndex + new int3(x, y, cellStride),
                             out float3 intersection,
                             out float3 normal,
                             scalarFieldInfos))
@@ -132,7 +136,7 @@ namespace DualContouring.DualContouring
 
                 QefSolver.SolveQef(positions, normals, count, massPoint, out float3 vertexPos);
 
-                ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellMin);
+                ScalarFieldUtility.GetWorldPosition(cellIndex, baseCellSize, scalarFieldOffset, out float3 cellMin);
                 float3 cellMax = cellMin + new float3(cellSize, cellSize, cellSize);
 
                 float distanceToMass = math.length(vertexPos - massPoint);
@@ -159,7 +163,7 @@ namespace DualContouring.DualContouring
             int fallbackIndex = ScalarFieldUtility.CoordToIndex(cellIndex, gridSize);
             if (fallbackIndex >= 0 && fallbackIndex < scalarField.Length)
             {
-                ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellMin);
+                ScalarFieldUtility.GetWorldPosition(cellIndex, baseCellSize, scalarFieldOffset, out float3 cellMin);
                 vertexPosition = cellMin + new float3(0.5f, 0.5f, 0.5f) * cellSize;
             }
         }

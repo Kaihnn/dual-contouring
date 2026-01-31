@@ -15,6 +15,7 @@ namespace DualContouring.DualContouring
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<OctreeNode>();
+            state.RequireForUpdate<OctreeLOD>();
         }
 
         [BurstCompile]
@@ -34,7 +35,8 @@ namespace DualContouring.DualContouring
             in DynamicBuffer<OctreeNode> octreeBuffer,
             in DynamicBuffer<ScalarFieldItem> scalarFieldBuffer,
             in OctreeNodeInfos octreeNodeInfos,
-            in ScalarFieldInfos scalarFieldInfos)
+            in ScalarFieldInfos scalarFieldInfos,
+            in OctreeLOD octreeLOD)
         {
             cellBuffer.Clear();
             edgeIntersectionBuffer.Clear();
@@ -43,6 +45,11 @@ namespace DualContouring.DualContouring
             {
                 return;
             }
+
+            // Calculer la profondeur cible en fonction du LOD
+            // LOD 0 = profondeur max (toutes les feuilles)
+            // LOD 1+ = profondeur max - LOD
+            int targetDepth = math.max(0, octreeNodeInfos.MaxDepth - octreeLOD.Level);
 
             NativeList<int> nodesToProcess = new NativeList<int>(math.max(64, octreeBuffer.Length / 8), Allocator.Temp);
             nodesToProcess.Add(0);
@@ -60,7 +67,8 @@ namespace DualContouring.DualContouring
 
                 OctreeNode node = octreeBuffer[nodeIndex];
 
-                if (node.ChildIndex >= 0)
+                // Si le nœud a des enfants ET qu'on n'a pas atteint la profondeur cible
+                if (node.ChildIndex >= 0 && node.Depth < targetDepth)
                 {
                     for (int i = 0; i < 8; i++)
                     {
@@ -69,7 +77,8 @@ namespace DualContouring.DualContouring
                 }
                 else
                 {
-                    ProcessLeafNode(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, node, scalarFieldInfos);
+                    // Sinon, traiter ce nœud comme une cellule (que ce soit une feuille ou un nœud à la profondeur cible)
+                    ProcessLeafNode(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, node, scalarFieldInfos, octreeNodeInfos);
                 }
             }
 
@@ -82,11 +91,16 @@ namespace DualContouring.DualContouring
             DynamicBuffer<DualContouringCell> cells,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             OctreeNode node,
-            ScalarFieldInfos scalarFieldInfos)
+            ScalarFieldInfos scalarFieldInfos,
+            OctreeNodeInfos octreeNodeInfos)
         {
             int3 cellIndex = node.Position;
             int3 gridSize = scalarFieldInfos.GridSize;
-            float cellSize = scalarFieldInfos.CellSize;
+            
+            // Calculer la taille de la cellule en fonction de la profondeur du nœud
+            float baseCellSize = octreeNodeInfos.MinNodeSize;
+            OctreeUtils.GetSizeFromDepth(in octreeNodeInfos.MaxDepth, in node.Depth, in baseCellSize, out float cellSize);
+            
             float3 scalarFieldOffset = scalarFieldInfos.ScalarFieldOffset;
 
             int3 cellGridSize = gridSize - new int3(1, 1, 1);
@@ -121,7 +135,8 @@ namespace DualContouring.DualContouring
 
             bool hasVertex = config != 0 && config != 255;
 
-            ScalarFieldUtility.GetWorldPosition(cellIndex, cellSize, scalarFieldOffset, out float3 cellPosition);
+            // Utiliser baseCellSize pour calculer la position car cellIndex est en unités de grille de base
+            ScalarFieldUtility.GetWorldPosition(cellIndex, baseCellSize, scalarFieldOffset, out float3 cellPosition);
             float3 vertexPosition = cellPosition + new float3(0.5f, 0.5f, 0.5f) * cellSize;
             var cellNormal = new float3(0, 1, 0);
 
@@ -131,6 +146,7 @@ namespace DualContouring.DualContouring
                     ref edgeIntersections,
                     in cellIndex,
                     in scalarFieldInfos,
+                    in cellSize,
                     out vertexPosition,
                     out cellNormal);
             }

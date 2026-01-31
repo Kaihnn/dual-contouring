@@ -8,6 +8,7 @@ namespace DualContouring.Octrees
         public float Value;
         public int ChildIndex;
         public int3 Position;
+        public int Depth;
     }
 }
 

@@ -47,7 +47,8 @@ namespace DualContouring.Octrees
             {
                 Position = rootMin,
                 Value = 0f,
-                ChildIndex = -1
+                ChildIndex = -1,
+                Depth = 0
             });
 
             SubdivideNodeIterative(ref octreeBuffer, in scalarFieldBuffer, in gridSize, 0, in rootMin, in rootMax, rootSize, maxDepth);
@@ -132,7 +133,8 @@ namespace DualContouring.Octrees
                     {
                         Position = childMin,
                         Value = 0f,
-                        ChildIndex = -1
+                        ChildIndex = -1,
+                        Depth = current.Depth + 1
                     });
                     
                     nodesToProcess.Add(new NodeToProcess

@@ -10,6 +10,11 @@ namespace DualContouring.Octrees
     /// </summary>
     public class OctreeAuthoring : MonoBehaviour
     {
+        [Header("Level of Detail")]
+        [Tooltip("Niveau de LOD. 0 = détail maximum, valeurs plus élevées = moins de détails.\nEn Play mode, modifiez via l'Entity Inspector (fenêtre Entities > sélectionner l'entité > component OctreeLOD).")]
+        [Range(0, 10)]
+        public int LODLevel = 0;
+
         private void OnDrawGizmos()
         {
             // Visualiser les valeurs du champ scalaire et les cellules pendant le jeu
@@ -28,6 +33,7 @@ namespace DualContouring.Octrees
                 AddBuffer<OctreeNode>(entity);
 
                 AddComponent(entity, new OctreeNodeInfos());
+                AddComponent(entity, new OctreeLOD { Level = authoring.LODLevel });
             }
         }
     }
