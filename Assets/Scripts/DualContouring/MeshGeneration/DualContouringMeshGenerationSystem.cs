@@ -64,9 +64,16 @@ namespace DualContouring.MeshGeneration
                 }
             }
 
+            // Merger les vertex proches AVANT de générer les faces
+            NativeArray<int> vertexRemap = MergeCloseVertices(vertexBuffer, cellBuffer, cellGridToVertexIndex);
+            
+            // Mettre à jour le mapping cellule->vertex avec les vertex mergés
+            UpdateCellGridMapping(cellGridToVertexIndex, vertexRemap);
+
             GenerateFacesFromCells(cellBuffer, cellGridToVertexIndex, vertexBuffer, triangleBuffer);
 
             cellGridToVertexIndex.Dispose();
+            vertexRemap.Dispose();
 
             if (vertexBuffer.Length > 0)
             {
@@ -151,10 +158,13 @@ namespace DualContouring.MeshGeneration
             int3 c01 = baseCoord + tangent2;
             int3 c11 = baseCoord + tangent1 + tangent2;
 
-            if (!cellGridToVertexIndex.TryGetValue(c00, out int v00) ||
-                !cellGridToVertexIndex.TryGetValue(c10, out int v10) ||
-                !cellGridToVertexIndex.TryGetValue(c01, out int v01) ||
-                !cellGridToVertexIndex.TryGetValue(c11, out int v11))
+            bool has00 = cellGridToVertexIndex.TryGetValue(c00, out int v00);
+            bool has10 = cellGridToVertexIndex.TryGetValue(c10, out int v10);
+            bool has01 = cellGridToVertexIndex.TryGetValue(c01, out int v01);
+            bool has11 = cellGridToVertexIndex.TryGetValue(c11, out int v11);
+
+            // On a besoin des 4 vertex pour créer un quad
+            if (!has00 || !has10 || !has01 || !has11)
             {
                 return;
             }
@@ -193,6 +203,274 @@ namespace DualContouring.MeshGeneration
                 triangleBuffer.Add(new DualContouringMeshTriangle { Index = i2 });
                 triangleBuffer.Add(new DualContouringMeshTriangle { Index = i1 });
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void CheckAndAddMissingCellsForQuad(
+            int3 baseCoord,
+            int3 tangent1,
+            int3 tangent2,
+            NativeHashMap<int3, int> cellGridToVertexIndex,
+            NativeHashSet<int3> cellsToAdd,
+            DynamicBuffer<DualContouringCell> cellBuffer)
+        {
+            int3 c00 = baseCoord;
+            int3 c10 = baseCoord + tangent1;
+            int3 c01 = baseCoord + tangent2;
+            int3 c11 = baseCoord + tangent1 + tangent2;
+
+            bool has00 = cellGridToVertexIndex.ContainsKey(c00);
+            bool has10 = cellGridToVertexIndex.ContainsKey(c10);
+            bool has01 = cellGridToVertexIndex.ContainsKey(c01);
+            bool has11 = cellGridToVertexIndex.ContainsKey(c11);
+
+            int count = (has00 ? 1 : 0) + (has10 ? 1 : 0) + (has01 ? 1 : 0) + (has11 ? 1 : 0);
+
+            // Si on a exactement 3 cellules, vérifier si on doit ajouter la 4ème
+            if (count == 3)
+            {
+                int3 missingCell = int3.zero;
+                if (!has00) missingCell = c00;
+                else if (!has10) missingCell = c10;
+                else if (!has01) missingCell = c01;
+                else if (!has11) missingCell = c11;
+
+                // Vérifier que la cellule manquante existe dans le buffer (sans vertex)
+                // Cela signifie qu'elle est proche de la surface
+                bool existsInBuffer = false;
+                for (int i = 0; i < cellBuffer.Length; i++)
+                {
+                    if (math.all(cellBuffer[i].GridIndex == missingCell))
+                    {
+                        existsInBuffer = true;
+                        break;
+                    }
+                }
+
+                // Seulement ajouter si la cellule existe déjà dans le buffer
+                // (donc elle est proche de la surface, juste sans vertex)
+                if (existsInBuffer)
+                {
+                    cellsToAdd.Add(missingCell);
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float3 InterpolatePositionFromNeighbors(
+            int3 cellPos,
+            NativeHashMap<int3, int> cellGridToVertexIndex,
+            DynamicBuffer<DualContouringMeshVertex> vertexBuffer,
+            DynamicBuffer<DualContouringCell> cellBuffer)
+        {
+            float3 avgPosition = float3.zero;
+            int count = 0;
+
+            // Chercher dans les 6 directions
+            int3[] directions = new int3[]
+            {
+                new int3(1, 0, 0), new int3(-1, 0, 0),
+                new int3(0, 1, 0), new int3(0, -1, 0),
+                new int3(0, 0, 1), new int3(0, 0, -1)
+            };
+
+            for (int i = 0; i < 6; i++)
+            {
+                int3 neighborPos = cellPos + directions[i];
+                if (cellGridToVertexIndex.TryGetValue(neighborPos, out int vertexIndex))
+                {
+                    avgPosition += vertexBuffer[vertexIndex].Position;
+                    count++;
+                }
+            }
+
+            if (count > 0)
+            {
+                return avgPosition / count;
+            }
+
+            // Fallback: utiliser la position du centre de la cellule
+            for (int i = 0; i < cellBuffer.Length; i++)
+            {
+                if (math.all(cellBuffer[i].GridIndex == cellPos))
+                {
+                    return cellBuffer[i].Position + new float3(0.5f) * cellBuffer[i].Size;
+                }
+            }
+
+            return float3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float3 InterpolateNormalFromNeighbors(
+            int3 cellPos,
+            NativeHashMap<int3, int> cellGridToVertexIndex,
+            DynamicBuffer<DualContouringMeshVertex> vertexBuffer)
+        {
+            float3 avgNormal = float3.zero;
+            int count = 0;
+
+            // Chercher dans les 6 directions
+            int3[] directions = new int3[]
+            {
+                new int3(1, 0, 0), new int3(-1, 0, 0),
+                new int3(0, 1, 0), new int3(0, -1, 0),
+                new int3(0, 0, 1), new int3(0, 0, -1)
+            };
+
+            for (int i = 0; i < 6; i++)
+            {
+                int3 neighborPos = cellPos + directions[i];
+                if (cellGridToVertexIndex.TryGetValue(neighborPos, out int vertexIndex))
+                {
+                    avgNormal += vertexBuffer[vertexIndex].Normal;
+                    count++;
+                }
+            }
+
+            if (count > 0)
+            {
+                return math.normalize(avgNormal);
+            }
+
+            return new float3(0, 1, 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private NativeArray<int> MergeCloseVertices(
+            DynamicBuffer<DualContouringMeshVertex> vertexBuffer,
+            DynamicBuffer<DualContouringCell> cellBuffer,
+            NativeHashMap<int3, int> cellGridToVertexIndex)
+        {
+            NativeArray<int> vertexRemap = new NativeArray<int>(vertexBuffer.Length * 2, Allocator.Temp);
+            
+            if (vertexBuffer.Length == 0)
+            {
+                return vertexRemap;
+            }
+
+            // Initialiser le remap (chaque vertex pointe vers lui-même)
+            for (int i = 0; i < vertexBuffer.Length; i++)
+            {
+                vertexRemap[i] = i;
+            }
+
+            // Seuil de distance pour merger les vertex
+            float mergeThreshold = 0.05f;
+            float mergeThresholdSq = mergeThreshold * mergeThreshold;
+
+            // Pour chaque vertex, vérifier s'il y a des vertex proches
+            for (int i = 0; i < vertexBuffer.Length; i++)
+            {
+                if (vertexRemap[i] != i)
+                {
+                    continue;
+                }
+
+                DualContouringMeshVertex v1 = vertexBuffer[i];
+
+                for (int j = i + 1; j < vertexBuffer.Length; j++)
+                {
+                    if (vertexRemap[j] != j)
+                    {
+                        continue;
+                    }
+
+                    DualContouringMeshVertex v2 = vertexBuffer[j];
+                    float distSq = math.lengthsq(v1.Position - v2.Position);
+
+                    if (distSq < mergeThresholdSq)
+                    {
+                        vertexRemap[j] = i;
+                    }
+                }
+            }
+
+            // Ajouter des cellules fictives pour les quads incomplets UNIQUEMENT à la surface
+            AddSurfaceFillCells(cellBuffer, cellGridToVertexIndex, vertexBuffer, vertexRemap);
+
+            return vertexRemap;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void AddSurfaceFillCells(
+            DynamicBuffer<DualContouringCell> cellBuffer,
+            NativeHashMap<int3, int> cellGridToVertexIndex,
+            DynamicBuffer<DualContouringMeshVertex> vertexBuffer,
+            NativeArray<int> vertexRemap)
+        {
+            NativeList<int3> cellsWithVertex = new NativeList<int3>(cellBuffer.Length, Allocator.Temp);
+            for (int i = 0; i < cellBuffer.Length; i++)
+            {
+                if (cellBuffer[i].HasVertex)
+                {
+                    cellsWithVertex.Add(cellBuffer[i].GridIndex);
+                }
+            }
+
+            NativeHashSet<int3> cellsToAdd = new NativeHashSet<int3>(32, Allocator.Temp);
+            
+            for (int i = 0; i < cellsWithVertex.Length; i++)
+            {
+                int3 cellPos = cellsWithVertex[i];
+                
+                CheckAndAddMissingCellsForQuad(cellPos, new int3(1, 0, 0), new int3(0, 1, 0), 
+                    cellGridToVertexIndex, cellsToAdd, cellBuffer);
+                CheckAndAddMissingCellsForQuad(cellPos, new int3(0, 1, 0), new int3(0, 0, 1), 
+                    cellGridToVertexIndex, cellsToAdd, cellBuffer);
+                CheckAndAddMissingCellsForQuad(cellPos, new int3(0, 0, 1), new int3(1, 0, 0), 
+                    cellGridToVertexIndex, cellsToAdd, cellBuffer);
+            }
+
+            var cellsToAddArray = cellsToAdd.ToNativeArray(Allocator.Temp);
+            for (int i = 0; i < cellsToAddArray.Length; i++)
+            {
+                int3 cellPos = cellsToAddArray[i];
+                
+                float3 position = InterpolatePositionFromNeighbors(cellPos, cellGridToVertexIndex, vertexBuffer, cellBuffer);
+                float3 normal = InterpolateNormalFromNeighbors(cellPos, cellGridToVertexIndex, vertexBuffer);
+                
+                int vertexIndex = vertexBuffer.Length;
+                
+                // Étendre le remap si nécessaire
+                if (vertexIndex >= vertexRemap.Length)
+                {
+                    continue;
+                }
+                
+                vertexRemap[vertexIndex] = vertexIndex;
+                cellGridToVertexIndex.Add(cellPos, vertexIndex);
+                
+                vertexBuffer.Add(new DualContouringMeshVertex
+                {
+                    Position = position,
+                    Normal = normal
+                });
+            }
+
+            cellsToAddArray.Dispose();
+            cellsToAdd.Dispose();
+            cellsWithVertex.Dispose();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void UpdateCellGridMapping(
+            NativeHashMap<int3, int> cellGridToVertexIndex,
+            NativeArray<int> vertexRemap)
+        {
+            // Créer une liste temporaire des clés
+            var keys = cellGridToVertexIndex.GetKeyArray(Allocator.Temp);
+            
+            // Mettre à jour chaque entrée avec l'index remappé
+            for (int i = 0; i < keys.Length; i++)
+            {
+                int3 key = keys[i];
+                int oldIndex = cellGridToVertexIndex[key];
+                int newIndex = vertexRemap[oldIndex];
+                cellGridToVertexIndex[key] = newIndex;
+            }
+            
+            keys.Dispose();
         }
     }
 }
