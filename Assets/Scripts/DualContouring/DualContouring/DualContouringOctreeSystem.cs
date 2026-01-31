@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using DualContouring.DualContouring.Debug;
 using DualContouring.Octrees;
 using DualContouring.ScalarField;
 using Unity.Burst;
@@ -16,18 +15,11 @@ namespace DualContouring.DualContouring
         public void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<OctreeNode>();
-            state.RequireForUpdate<DualContouringOptions>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (!SystemAPI.TryGetSingleton(out DualContouringOptions options) ||
-                options.Type != DualContouringType.Octree)
-            {
-                return;
-            }
-
             var job = new DualContouringOctreeJob();
             job.ScheduleParallel();
         }

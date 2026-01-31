@@ -52,25 +52,20 @@ namespace DualContouring.DualContouring.Debug
                 else
                 {
                     // Dessiner toutes les cellules dans la plage Min-Max
-                    for (int y = min.y; y <= max.y; y++)
+                    for (int i = 0; i < cellBuffer.Length; i++)
                     {
-                        for (int z = min.z; z <= max.z; z++)
+                        DualContouringCell cell = cellBuffer[i];
+                        int3 cellGridIndex = cell.GridIndex;
+                        
+                        // Vérifier si la cellule est dans la plage Min-Max
+                        if (math.all(cellGridIndex >= min) && math.all(cellGridIndex <= max))
                         {
-                            for (int x = min.x; x <= max.x; x++)
-                            {
-                                int3 cellCoord = new int3(x, y, z);
-                                int cellIndex = ScalarFieldUtility.CoordToIndex(cellCoord, cellGridSize);
-                                
-                                if (cellIndex >= 0 && cellIndex < cellBuffer.Length)
-                                {
-                                    DrawCell(cellBuffer[cellIndex], localToWorld.ValueRO, visualizationOptions.DrawEmptyCell);
+                            DrawCell(cell, localToWorld.ValueRO, visualizationOptions.DrawEmptyCell);
 
-                                    // Dessiner les intersections d'arêtes pour cette cellule si activé
-                                    if (visualizationOptions.DrawEdgeIntersections)
-                                    {
-                                        DrawEdgeIntersectionsForCell(edgeIntersectionBuffer, cellIndex, localToWorld.ValueRO, visualizationOptions.DrawMassPoint);
-                                    }
-                                }
+                            // Dessiner les intersections d'arêtes pour cette cellule si activé
+                            if (visualizationOptions.DrawEdgeIntersections)
+                            {
+                                DrawEdgeIntersectionsForCell(edgeIntersectionBuffer, i, localToWorld.ValueRO, visualizationOptions.DrawMassPoint);
                             }
                         }
                     }
