@@ -1,0 +1,125 @@
+dual-contouring/
+├── SKILL.md                 [20KB] Main skill definition (REQUIRED)
+│   ├── Frontmatter (YAML)
+│   │   ├── name: dual-contouring
+│   │   ├── description: Master dual contouring...
+│   │   ├── license: MIT
+│   │   ├── compatibility: opencode
+│   │   └── metadata: audience, domain, stack, version, references
+│   │
+│   └── Content (669 lines)
+│       ├── Core Expertise
+│       │   ├── 1. Dual Contouring Algorithm
+│       │   ├── 2. QEF Solver
+│       │   ├── 3. Octree-Based LOD
+│       │   └── 4. Mesh Generation Pipeline
+│       │
+│       ├── Unity DOTS/ECS Patterns
+│       │   ├── System Architecture
+│       │   ├── Component Design
+│       │   └── Job Patterns
+│       │
+│       ├── Performance Optimization Techniques
+│       │   ├── 1. Burst Compilation
+│       │   ├── 2. Native Collections
+│       │   ├── 3. Parallel Scheduling
+│       │   ├── 4. Memory Patterns
+│       │   └── 5. SIMD-Friendly Code
+│       │
+│       ├── Common Patterns and Best Practices
+│       │   ├── Stack-Based Octree Traversal
+│       │   ├── Vertex Merging
+│       │   ├── Winding Order Correction
+│       │   └── Gap Filling
+│       │
+│       ├── Code Quality Standards
+│       │   ├── 1. Naming Conventions
+│       │   ├── 2. Component Design
+│       │   ├── 3. System Design
+│       │   └── 4. Error Handling
+│       │
+│       ├── When to Use This Skill
+│       ├── What I Can Help With
+│       ├── Key Implementation Checklist (15 items)
+│       ├── Example Implementation Flow (5 phases)
+│       ├── Tone and Philosophy
+│       │
+│       ├── Essential References and Resources ⭐ NEW
+│       │   ├── Boris The Brave's Tutorial
+│       │   │   └── https://www.boristhebrave.com/2018/04/15/dual-contouring-tutorial/
+│       │   ├── MC-DC Repository
+│       │   │   └── https://github.com/BorisTheBrave/mc-dc
+│       │   ├── Transvoxel Algorithm
+│       │   │   └── https://transvoxel.org/
+│       │   ├── How to Apply These Resources
+│       │   ├── Integration with This Codebase
+│       │   └── Common Patterns from Resources
+│       │
+│       └── Additional Resources Pattern
+│           └── Codebase file references
+│
+├── README.md                [2.3KB] Overview and usage
+│   ├── Usage instructions
+│   ├── Key topics covered
+│   ├── External references
+│   └── Compatibility info
+│
+├── EXAMPLES.md              [6.5KB] Practical examples
+│   ├── Example 1: Implementing QEF Solver
+│   ├── Example 2: Fixing LOD Seams
+│   ├── Example 3: Optimizing Mesh Generation
+│   ├── Example 4: Adding Gap Filling
+│   ├── Example 5: Understanding DC Basics
+│   ├── Example 6: Debugging Flipped Normals
+│   ├── Example 7: Implementing Octree LOD
+│   ├── Example 8: Converting to DOTS
+│   ├── Skill Loading Example
+│   └── Best Practices
+│
+├── VALIDATION.md            [3.1KB] Validation checklist
+│   ├── Skill Information
+│   ├── Frontmatter Validation
+│   ├── Content Structure
+│   ├── External References Included
+│   ├── How to Use
+│   ├── Testing Checklist
+│   └── Skill Metrics
+│
+└── SUMMARY.txt              [4.6KB] Creation summary
+    ├── Files Created
+    ├── External References Integrated
+    ├── Skill Capabilities
+    ├── Validation Checklist
+    ├── How to Use
+    ├── Integration with Codebase
+    ├── Metrics
+    └── Next Steps
+
+TOTAL: 5 files, ~35KB documentation
+
+KEY FEATURES:
+✓ Complete dual contouring implementation guide
+✓ Unity DOTS/ECS architecture patterns
+✓ QEF solver with stability techniques
+✓ Octree-based LOD strategies
+✓ Mesh generation optimization
+✓ 3 authoritative external references integrated
+✓ 15+ code examples
+✓ 8 practical usage scenarios
+✓ 15-item implementation checklist
+✓ Fully validated and production-ready
+
+EXTERNAL REFERENCES:
+1. Boris The Brave - DC Tutorial (theory, QEF math)
+2. MC-DC Repository - C# implementation
+3. Transvoxel - Seamless LOD transitions
+
+INVOCATION:
+- Explicit: /skill dual-contouring
+- Automatic: Keywords like "dual contouring", "QEF", "octree LOD", "mesh generation"
+
+COMPATIBILITY:
+- Unity 2022.3+
+- Entities 1.4.3+
+- Burst Compiler 1.8+
+- Mathematics 1.3+
