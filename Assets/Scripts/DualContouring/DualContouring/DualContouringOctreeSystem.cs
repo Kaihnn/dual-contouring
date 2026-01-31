@@ -9,6 +9,7 @@ using Unity.Mathematics;
 namespace DualContouring.DualContouring
 {
     [BurstCompile]
+    [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct DualContouringOctreeSystem : ISystem
     {
         [BurstCompile]
@@ -35,7 +36,6 @@ namespace DualContouring.DualContouring
             in DynamicBuffer<OctreeNode> octreeBuffer,
             in DynamicBuffer<ScalarFieldItem> scalarFieldBuffer,
             in OctreeNodeInfos octreeNodeInfos,
-            in ScalarFieldInfos scalarFieldInfos,
             in OctreeLOD octreeLOD)
         {
             cellBuffer.Clear();
@@ -78,7 +78,7 @@ namespace DualContouring.DualContouring
                 else
                 {
                     // Sinon, traiter ce nœud comme une cellule (que ce soit une feuille ou un nœud à la profondeur cible)
-                    ProcessLeafNode(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, node, scalarFieldInfos, octreeNodeInfos);
+                    ProcessLeafNode(scalarFieldBuffer, cellBuffer, edgeIntersectionBuffer, node, octreeNodeInfos);
                 }
             }
 
@@ -91,20 +91,23 @@ namespace DualContouring.DualContouring
             DynamicBuffer<DualContouringCell> cells,
             DynamicBuffer<DualContouringEdgeIntersection> edgeIntersections,
             OctreeNode node,
-            ScalarFieldInfos scalarFieldInfos,
             OctreeNodeInfos octreeNodeInfos)
         {
             int3 cellIndex = node.Position;
-            int3 gridSize = scalarFieldInfos.GridSize;
+            int3 gridSize = octreeNodeInfos.GridSize;
             
             // Calculer la taille de la cellule en fonction de la profondeur du nœud
             float baseCellSize = octreeNodeInfos.MinNodeSize;
             OctreeUtils.GetSizeFromDepth(in octreeNodeInfos.MaxDepth, in node.Depth, in baseCellSize, out float cellSize);
             
-            float3 scalarFieldOffset = scalarFieldInfos.ScalarFieldOffset;
+            float3 scalarFieldOffset = octreeNodeInfos.OctreeOffset;
+            
+            // Calculer le stride (nombre de cellules de base que couvre cette cellule LOD)
+            int cellStride = (int)math.round(cellSize / baseCellSize);
 
-            int3 cellGridSize = gridSize - new int3(1, 1, 1);
-            if (math.any(cellIndex < 0) || math.any(cellIndex >= cellGridSize))
+            // Vérifier que tous les coins de cette cellule LOD sont dans les limites
+            int3 maxCorner = cellIndex + new int3(cellStride);
+            if (math.any(cellIndex < 0) || math.any(maxCorner >= gridSize))
             {
                 return;
             }
@@ -114,9 +117,9 @@ namespace DualContouring.DualContouring
             for (int i = 0; i < 8; i++)
             {
                 var offset = new int3(
-                    i & 1,
-                    (i >> 1) & 1,
-                    (i >> 2) & 1
+                    (i & 1) * cellStride,
+                    ((i >> 1) & 1) * cellStride,
+                    ((i >> 2) & 1) * cellStride
                 );
 
                 int3 cornerIndex = cellIndex + offset;
@@ -142,6 +145,14 @@ namespace DualContouring.DualContouring
 
             if (hasVertex)
             {
+                // Créer un ScalarFieldInfos temporaire pour DualContouringHelper
+                var scalarFieldInfos = new ScalarFieldInfos
+                {
+                    GridSize = octreeNodeInfos.GridSize,
+                    CellSize = octreeNodeInfos.MinNodeSize,
+                    ScalarFieldOffset = octreeNodeInfos.OctreeOffset
+                };
+                
                 DualContouringHelper.CalculateVertexPositionAndNormal(in scalarField,
                     ref edgeIntersections,
                     in cellIndex,

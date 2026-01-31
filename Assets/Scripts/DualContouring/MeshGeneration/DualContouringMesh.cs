@@ -44,4 +44,15 @@ namespace DualContouring.MeshGeneration
         public float3 Center;
         public float3 Size;
     }
+
+    /// <summary>
+    ///     Composant de debug qui contient les statistiques du mesh
+    /// </summary>
+    public struct DualContouringMeshInfo : IComponentData
+    {
+        public int VertexCount;
+        public int TriangleCount;
+        public bool HasMesh;
+        public bool HasRenderComponents;
+    }
 }

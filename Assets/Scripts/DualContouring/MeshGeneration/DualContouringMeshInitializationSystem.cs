@@ -6,6 +6,8 @@ using UnityEngine;
 
 namespace DualContouring.MeshGeneration
 {
+    [UpdateInGroup(typeof(SimulationSystemGroup))]
+    [UpdateAfter(typeof(DualContouringMeshGenerationSystem))]
     public partial class DualContouringMeshInitializationSystem : SystemBase
     {
         protected override void OnCreate()
@@ -48,7 +50,9 @@ namespace DualContouring.MeshGeneration
                 });
 
                 var renderMeshArray = new RenderMeshArray(new[] { materialRef.Material.Value }, new[] { mesh });
-                var renderMeshDescription = new RenderMeshDescription(UnityEngine.Rendering.ShadowCastingMode.Off);
+                var renderMeshDescription = new RenderMeshDescription(
+                    shadowCastingMode: UnityEngine.Rendering.ShadowCastingMode.On,
+                    receiveShadows: true);
 
                 RenderMeshUtility.AddComponents(
                     entity,

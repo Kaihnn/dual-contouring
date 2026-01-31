@@ -9,5 +9,6 @@ namespace DualContouring.Octrees
         public int MaxDepth;
         public float MaxNodeSize;
         public float MinNodeSize;
+        public int3 GridSize;
     }
 }

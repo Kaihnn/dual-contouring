@@ -28,9 +28,51 @@ namespace DualContouring.MeshGeneration
                      .WithAll<DualContouringMeshDirty>()
                      .WithEntityAccess())
             {
+                var entityManager = state.EntityManager;
+                
                 if (meshRef.ValueRO.Mesh.Value != null)
                 {
                     UpdateMeshData(meshRef.ValueRO.Mesh.Value, vertexBuffer, triangleBuffer, bounds.ValueRO);
+                    
+                    // Forcer la mise à jour des RenderBounds
+                    if (entityManager.HasComponent<Unity.Rendering.RenderBounds>(entity))
+                    {
+                        var renderBounds = entityManager.GetComponentData<Unity.Rendering.RenderBounds>(entity);
+                        
+                        // Recalculer les render bounds à partir du mesh
+                        var meshBounds = meshRef.ValueRO.Mesh.Value.bounds;
+                        renderBounds.Value = new Unity.Mathematics.AABB 
+                        { 
+                            Center = meshBounds.center, 
+                            Extents = meshBounds.extents 
+                        };
+                        entityManager.SetComponentData(entity, renderBounds);
+                    }
+                    
+                    // Forcer la mise à jour du système de rendu
+                    if (entityManager.HasComponent<Unity.Rendering.MaterialMeshInfo>(entity))
+                    {
+                        var materialMeshInfo = entityManager.GetComponentData<Unity.Rendering.MaterialMeshInfo>(entity);
+                        entityManager.SetComponentData(entity, materialMeshInfo);
+                    }
+                    
+                    // Mettre à jour les infos du mesh via ECB
+                    var meshInfo = new DualContouringMeshInfo
+                    {
+                        VertexCount = vertexBuffer.Length,
+                        TriangleCount = triangleBuffer.Length / 3,
+                        HasMesh = true,
+                        HasRenderComponents = entityManager.HasComponent<Unity.Rendering.MaterialMeshInfo>(entity)
+                    };
+                    
+                    if (entityManager.HasComponent<DualContouringMeshInfo>(entity))
+                    {
+                        ecb.SetComponent(entity, meshInfo);
+                    }
+                    else
+                    {
+                        ecb.AddComponent(entity, meshInfo);
+                    }
                 }
 
                 ecb.RemoveComponent<DualContouringMeshDirty>(entity);

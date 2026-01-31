@@ -8,12 +8,13 @@ using Unity.Mathematics;
 namespace DualContouring.MeshGeneration
 {
     [BurstCompile]
+    [UpdateInGroup(typeof(SimulationSystemGroup))]
+    [UpdateAfter(typeof(DualContouring.DualContouringOctreeSystem))]
     public partial struct DualContouringMeshGenerationSystem : ISystem
     {
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<DualContouringCell>();
             state.RequireForUpdate<BeginSimulationEntityCommandBufferSystem.Singleton>();
         }
 
@@ -46,6 +47,11 @@ namespace DualContouring.MeshGeneration
         {
             vertexBuffer.Clear();
             triangleBuffer.Clear();
+            
+            if (cellBuffer.Length == 0)
+            {
+                return;
+            }
 
             // Étape 1: Créer un mapping cellule->vertex pour les cellules avec vertex
             NativeHashMap<int3, int> cellGridToVertexIndex = new NativeHashMap<int3, int>(cellBuffer.Length, Allocator.Temp);
@@ -64,6 +70,12 @@ namespace DualContouring.MeshGeneration
                         Normal = cell.Normal
                     });
                 }
+            }
+            
+            if (vertexBuffer.Length == 0)
+            {
+                cellGridToVertexIndex.Dispose();
+                return;
             }
 
             // Étape 2: Créer un mapping edge->cellules pour identifier quelles cellules partagent une edge
@@ -105,7 +117,7 @@ namespace DualContouring.MeshGeneration
 
         /// <summary>
         /// Construit un mapping de chaque edge vers les cellules qui la touchent.
-        /// Chaque edge peut être partagée par plusieurs cellules (jusqu'à 4 dans un espace 3D).
+        /// Utilise directement les edges générées par les cellules, sans recalcul géométrique.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private NativeParallelMultiHashMap<EdgeKey, int> BuildEdgeToCellMapping(
@@ -116,66 +128,65 @@ namespace DualContouring.MeshGeneration
             // Allouer avec une capacité suffisante (chaque edge peut être partagée par ~4 cellules)
             var edgeToCells = new NativeParallelMultiHashMap<EdgeKey, int>(edgeIntersections.Length * 4, Allocator.Temp);
 
-            // Pour chaque intersection d'edge, trouver les cellules adjacentes qui ont un vertex
+            // Pour chaque intersection d'edge, l'ajouter au mapping avec sa cellule
             for (int i = 0; i < edgeIntersections.Length; i++)
             {
                 var edgeIntersection = edgeIntersections[i];
                 EdgeKey edge = edgeIntersection.Edge;
                 
-                // Trouver les cellules adjacentes à cette edge
-                // Une edge est partagée par les cellules dont les coins incluent les deux points de l'edge
-                AddAdjacentCellsForEdge(edge, cellGridToVertexIndex, edgeToCells);
-            }
-
-            return edgeToCells;
-        }
-
-        /// <summary>
-        /// Trouve toutes les cellules qui partagent une edge donnée et les ajoute au mapping.
-        /// Une edge entre deux points de grille est partagée par 4 cellules dans un arrangement 2x2.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void AddAdjacentCellsForEdge(
-            EdgeKey edge,
-            NativeHashMap<int3, int> cellGridToVertexIndex,
-            NativeParallelMultiHashMap<EdgeKey, int> edgeToCells)
-        {
-            int3 start = edge.Start;
-            int3 end = edge.End;
-            
-            // Déterminer l'axe de l'edge (l'axe le long duquel elle s'étend)
-            int axis = edge.GetAxisDirection();
-            
-            // Les deux autres axes perpendiculaires
-            int axis1 = (axis + 1) % 3;
-            int axis2 = (axis + 2) % 3;
-            
-            // Une edge de grille est partagée par 4 cellules qui forment un carré 2x2 dans le plan perpendiculaire
-            // Les cellules ont leur coin "inférieur gauche" aux positions suivantes:
-            // - (start - (0,0)) 
-            // - (start - (1,0))
-            // - (start - (0,1))
-            // - (start - (1,1))
-            // où les coordonnées sont dans le plan perpendiculaire à l'edge
-            
-            for (int i = 0; i < 2; i++)
-            {
-                for (int j = 0; j < 2; j++)
+                // Trouver quelle cellule a généré cette edge
+                // Les edges sont générées par DualContouringHelper pour chaque cellule
+                // On doit trouver toutes les cellules qui ont un vertex et qui touchent cette edge
+                
+                // Pour cela, on parcourt toutes les cellules et on vérifie si l'edge est dans leurs bounds
+                for (int cellIdx = 0; cellIdx < cells.Length; cellIdx++)
                 {
-                    int3 offset = int3.zero;
-                    offset[axis1] = -i;
-                    offset[axis2] = -j;
+                    var cell = cells[cellIdx];
+                    if (!cell.HasVertex)
+                        continue;
                     
-                    // La cellule dont le coin est à start + offset
-                    int3 cellPos = start + offset;
+                    if (!cellGridToVertexIndex.TryGetValue(cell.GridIndex, out int vertexIndex))
+                        continue;
                     
-                    if (cellGridToVertexIndex.TryGetValue(cellPos, out int vertexIndex))
+                    // Vérifier si l'edge est dans les bounds de cette cellule
+                    // Une edge appartient à une cellule si ses deux points sont dans/sur les bounds de la cellule
+                    if (IsEdgeInCellBounds(edge, cell))
                     {
                         edgeToCells.Add(edge, vertexIndex);
                     }
                 }
             }
+
+            return edgeToCells;
         }
+        
+        /// <summary>
+        /// Vérifie si une edge appartient à une cellule (si l'edge est sur le bord ou à l'intérieur)
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool IsEdgeInCellBounds(EdgeKey edge, DualContouringCell cell)
+        {
+            int3 cellMin = cell.GridIndex;
+            // Calculer cellStride à partir de la taille de la cellule
+            // Supposons que les cellules de base ont une taille donnée par le plus petit Size
+            // Pour LOD, cellStride = Size / baseSize
+            // On peut approximer avec Size (si baseSize = 1)
+            int cellStride = (int)math.round(cell.Size);
+            if (cellStride < 1) cellStride = 1;
+            
+            int3 cellMax = cellMin + new int3(cellStride);
+            
+            int3 edgeMin = edge.Start;
+            int3 edgeMax = edge.End;
+            
+            // L'edge appartient à la cellule si ses deux extrémités sont dans [cellMin, cellMax]
+            bool startInBounds = math.all(edgeMin >= cellMin) && math.all(edgeMin <= cellMax);
+            bool endInBounds = math.all(edgeMax >= cellMin) && math.all(edgeMax <= cellMax);
+            
+            return startInBounds && endInBounds;
+        }
+
+
 
         /// <summary>
         /// Génère les faces du mesh à partir des edges partagées entre cellules.
