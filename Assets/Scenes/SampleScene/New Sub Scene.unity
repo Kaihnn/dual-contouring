@@ -205,6 +205,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc39b66ce37d4ff1a3b4e0da691ecdc4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DualContouring.Octrees.OctreeAuthoring
+  lodLevel: 0
 --- !u!1 &1583788650
 GameObject:
   m_ObjectHideFlags: 0
@@ -259,7 +260,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2020012165}
-  - component: {fileID: 2020012166}
   m_Layer: 0
   m_Name: ScalarFieldOptions
   m_TagString: Untagged
@@ -276,25 +276,12 @@ Transform:
   m_GameObject: {fileID: 2020012164}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 5.73661, y: 0, z: 4.18801}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2020012166
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2020012164}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d64ef30ef08742869f08e8fb814dd5e6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DualContouring.DualContouring.Debug.DualContouringOptionsAuthoring
-  DualContouringType: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
