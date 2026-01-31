@@ -65,7 +65,7 @@ namespace DualContouring.DualContouring.Debug
                             // Dessiner les intersections d'arêtes pour cette cellule si activé
                             if (visualizationOptions.DrawEdgeIntersections)
                             {
-                                DrawEdgeIntersectionsForCell(edgeIntersectionBuffer, i, localToWorld.ValueRO, visualizationOptions.DrawMassPoint);
+                                DrawEdgeIntersectionsForCell(edgeIntersectionBuffer, i, localToWorld.ValueRO, visualizationOptions.DrawMassPoint, cellBuffer);
                             }
                         }
                     }
@@ -128,14 +128,36 @@ namespace DualContouring.DualContouring.Debug
             }
         }
 
-        private void DrawEdgeIntersectionsForCell(DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer, int cellIndex, LocalToWorld localToWorld, bool drawMassPoint)
+        private void DrawEdgeIntersectionsForCell(DynamicBuffer<DualContouringEdgeIntersection> edgeIntersectionBuffer, 
+            int cellIndex, 
+            LocalToWorld localToWorld, 
+            bool drawMassPoint,
+            DynamicBuffer<DualContouringCell> cellBuffer)
         {
+            // Récupérer le GridIndex de la cellule
+            if (cellIndex < 0 || cellIndex >= cellBuffer.Length)
+                return;
+                
+            int3 cellGridIndex = cellBuffer[cellIndex].GridIndex;
+            int cellStride = (int)math.round(cellBuffer[cellIndex].Size);
+            
             float3 massPoint = float3.zero;
             int count = 0;
 
             foreach (DualContouringEdgeIntersection edgeIntersection in edgeIntersectionBuffer)
             {
-                if (edgeIntersection.CellIndex == cellIndex)
+                // Vérifier si l'edge appartient à cette cellule
+                // Une edge appartient à une cellule si son EdgeStart commence dans la cellule
+                int3 edgeStart = edgeIntersection.EdgeStart;
+                
+                // Pour qu'une edge appartienne à la cellule, son start doit être >= cellGridIndex
+                // et < cellGridIndex + cellStride (dans toutes les dimensions non-alignées avec l'edge)
+                int3 diff = edgeStart - cellGridIndex;
+                
+                // L'edge appartient si diff est dans [0, cellStride) pour chaque composante
+                bool belongsToCell = math.all(diff >= 0) && math.all(diff <= cellStride);
+                
+                if (belongsToCell)
                 {
                     DrawEdgeIntersection(edgeIntersection, localToWorld);
                     massPoint += edgeIntersection.Position;
@@ -156,7 +178,11 @@ namespace DualContouring.DualContouring.Debug
                 Gizmos.color = new Color(0.5f, 0.5f, 1.0f, 0.5f);
                 foreach (DualContouringEdgeIntersection edgeIntersection in edgeIntersectionBuffer)
                 {
-                    if (edgeIntersection.CellIndex == cellIndex)
+                    int3 edgeStart = edgeIntersection.EdgeStart;
+                    int3 diff = edgeStart - cellGridIndex;
+                    bool belongsToCell = math.all(diff >= 0) && math.all(diff <= cellStride);
+                    
+                    if (belongsToCell)
                     {
                         float3 worldPos = math.transform(localToWorld.Value, edgeIntersection.Position);
                         Gizmos.DrawLine(worldMassPoint, worldPos);
