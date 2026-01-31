@@ -45,9 +45,12 @@ namespace DualContouring.DualContouring
             {
                 for (int z = 0; z <= cellStride; z += cellStride)
                 {
+                    int3 p1 = cellIndex + new int3(0, y, z);
+                    int3 p2 = cellIndex + new int3(cellStride, y, z);
+                    
                     if (TryGetEdgeIntersection(scalarField,
-                            cellIndex + new int3(0, y, z),
-                            cellIndex + new int3(cellStride, y, z),
+                            p1,
+                            p2,
                             out float3 intersection,
                             out float3 normal,
                             scalarFieldInfos))
@@ -62,6 +65,7 @@ namespace DualContouring.DualContouring
                         {
                             Position = intersection,
                             Normal = normal,
+                            Edge = new EdgeKey(p1, p2),
                             CellIndex = currentCellIndex
                         });
                     }
@@ -73,9 +77,12 @@ namespace DualContouring.DualContouring
             {
                 for (int z = 0; z <= cellStride; z += cellStride)
                 {
+                    int3 p1 = cellIndex + new int3(x, 0, z);
+                    int3 p2 = cellIndex + new int3(x, cellStride, z);
+                    
                     if (TryGetEdgeIntersection(scalarField,
-                            cellIndex + new int3(x, 0, z),
-                            cellIndex + new int3(x, cellStride, z),
+                            p1,
+                            p2,
                             out float3 intersection,
                             out float3 normal,
                             scalarFieldInfos))
@@ -90,6 +97,7 @@ namespace DualContouring.DualContouring
                         {
                             Position = intersection,
                             Normal = normal,
+                            Edge = new EdgeKey(p1, p2),
                             CellIndex = currentCellIndex
                         });
                     }
@@ -101,9 +109,12 @@ namespace DualContouring.DualContouring
             {
                 for (int y = 0; y <= cellStride; y += cellStride)
                 {
+                    int3 p1 = cellIndex + new int3(x, y, 0);
+                    int3 p2 = cellIndex + new int3(x, y, cellStride);
+                    
                     if (TryGetEdgeIntersection(scalarField,
-                            cellIndex + new int3(x, y, 0),
-                            cellIndex + new int3(x, y, cellStride),
+                            p1,
+                            p2,
                             out float3 intersection,
                             out float3 normal,
                             scalarFieldInfos))
@@ -118,6 +129,7 @@ namespace DualContouring.DualContouring
                         {
                             Position = intersection,
                             Normal = normal,
+                            Edge = new EdgeKey(p1, p2),
                             CellIndex = currentCellIndex
                         });
                     }

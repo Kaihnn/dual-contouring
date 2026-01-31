@@ -147,15 +147,18 @@ namespace DualContouring.DualContouring.Debug
             foreach (DualContouringEdgeIntersection edgeIntersection in edgeIntersectionBuffer)
             {
                 // Vérifier si l'edge appartient à cette cellule
-                // Une edge appartient à une cellule si son EdgeStart commence dans la cellule
-                int3 edgeStart = edgeIntersection.EdgeStart;
+                // Une edge appartient à une cellule si son start ou end est dans la cellule
+                int3 edgeStart = edgeIntersection.Edge.Start;
+                int3 edgeEnd = edgeIntersection.Edge.End;
                 
-                // Pour qu'une edge appartienne à la cellule, son start doit être >= cellGridIndex
-                // et < cellGridIndex + cellStride (dans toutes les dimensions non-alignées avec l'edge)
-                int3 diff = edgeStart - cellGridIndex;
+                // Pour qu'une edge appartienne à la cellule, au moins un de ses points doit être dans la cellule
+                int3 diffStart = edgeStart - cellGridIndex;
+                int3 diffEnd = edgeEnd - cellGridIndex;
                 
-                // L'edge appartient si diff est dans [0, cellStride) pour chaque composante
-                bool belongsToCell = math.all(diff >= 0) && math.all(diff <= cellStride);
+                // L'edge appartient si start ou end est dans [cellGridIndex, cellGridIndex + cellStride]
+                bool startInCell = math.all(diffStart >= 0) && math.all(diffStart <= cellStride);
+                bool endInCell = math.all(diffEnd >= 0) && math.all(diffEnd <= cellStride);
+                bool belongsToCell = startInCell || endInCell;
                 
                 if (belongsToCell)
                 {
@@ -178,9 +181,14 @@ namespace DualContouring.DualContouring.Debug
                 Gizmos.color = new Color(0.5f, 0.5f, 1.0f, 0.5f);
                 foreach (DualContouringEdgeIntersection edgeIntersection in edgeIntersectionBuffer)
                 {
-                    int3 edgeStart = edgeIntersection.EdgeStart;
-                    int3 diff = edgeStart - cellGridIndex;
-                    bool belongsToCell = math.all(diff >= 0) && math.all(diff <= cellStride);
+                    int3 edgeStart = edgeIntersection.Edge.Start;
+                    int3 edgeEnd = edgeIntersection.Edge.End;
+                    int3 diffStart = edgeStart - cellGridIndex;
+                    int3 diffEnd = edgeEnd - cellGridIndex;
+                    
+                    bool startInCell = math.all(diffStart >= 0) && math.all(diffStart <= cellStride);
+                    bool endInCell = math.all(diffEnd >= 0) && math.all(diffEnd <= cellStride);
+                    bool belongsToCell = startInCell || endInCell;
                     
                     if (belongsToCell)
                     {
