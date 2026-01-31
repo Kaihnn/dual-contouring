@@ -529,6 +529,16 @@ When implementing dual contouring features, ensure:
   - Practical implementation tips
 - **When to reference**: Learning DC fundamentals, understanding QEF mathematics, troubleshooting vertex positioning issues
 
+**Henrique Gois - Generating Mesh from SDFs with Dual Contouring**:
+- URL: https://henriquegois.dev/posts/generating-mesh-from-sdfs-with-dual-contouring/
+- **What it covers**:
+  - Practical implementation guide for SDF to mesh conversion
+  - Detailed dual contouring algorithm breakdown
+  - Code examples and step-by-step explanations
+  - Common pitfalls and solutions
+  - Visual examples of the meshing process
+- **When to reference**: Implementing SDF-based terrain, understanding practical DC implementation details, debugging mesh generation from signed distance fields
+
 **MC-DC Reference Implementation** (Boris The Brave):
 - URL: https://github.com/BorisTheBrave/mc-dc
 - **What it provides**:
