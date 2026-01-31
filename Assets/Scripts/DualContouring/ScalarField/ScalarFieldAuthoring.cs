@@ -44,7 +44,8 @@ namespace DualContouring.ScalarField
                 AddComponent(entity,
                     new ScalarFieldSelectedCell
                     {
-                        Min = int3.zero
+                        Min = int3.zero,
+                        Max = authoring.GridSize - new int3(2, 2, 2)  // GridSize - 2 pour les cellules (car cellules = points - 1)
                     });
                 AddComponent(entity,
                     new ScalarFieldInfos

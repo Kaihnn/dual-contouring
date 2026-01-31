@@ -32,19 +32,18 @@ namespace DualContouring.DualContouring.Debug
                          .Query<DynamicBuffer<DualContouringCell>, DynamicBuffer<DualContouringEdgeIntersection>, RefRO<ScalarFieldSelectedCell>,
                              RefRO<ScalarFieldInfos>, RefRO<LocalToWorld>>().WithAll<ScalarFieldSelected>())
             {
-                // Calculer l'index de la cellule sélectionnée
                 int3 cellGridSize = scalarFieldInfos.ValueRO.GridSize - new int3(1, 1, 1);
-                int selectedIndex = ScalarFieldUtility.CoordToIndex(selectedCell.ValueRO.Min, cellGridSize);
-
-                // Si l'index est invalide, dessiner toutes les cellules
-                bool drawAllCells = selectedIndex < 0 || selectedIndex >= cellBuffer.Length;
-
-                if (drawAllCells)
+                int3 min = selectedCell.ValueRO.Min;
+                int3 max = selectedCell.ValueRO.Max;
+                
+                // Vérifier si la plage est valide
+                bool validRange = math.all(min >= 0) && math.all(max >= min) && math.all(max < cellGridSize);
+                
+                if (!validRange)
                 {
-                    // Dessiner toutes les cellules
+                    // Si la plage est invalide, dessiner toutes les cellules
                     DrawAllCells(cellBuffer, localToWorld.ValueRO);
 
-                    // Dessiner toutes les intersections d'arêtes si activé
                     if (visualizationOptions.DrawEdgeIntersections)
                     {
                         DrawAllEdgeIntersections(edgeIntersectionBuffer, localToWorld.ValueRO);
@@ -52,13 +51,28 @@ namespace DualContouring.DualContouring.Debug
                 }
                 else
                 {
-                    // Dessiner uniquement la cellule sélectionnée
-                    DrawCell(cellBuffer[selectedIndex], localToWorld.ValueRO, visualizationOptions.DrawEmptyCell);
-
-                    // Dessiner les intersections d'arêtes pour la cellule sélectionnée si activé
-                    if (visualizationOptions.DrawEdgeIntersections)
+                    // Dessiner toutes les cellules dans la plage Min-Max
+                    for (int y = min.y; y <= max.y; y++)
                     {
-                        DrawEdgeIntersectionsForCell(edgeIntersectionBuffer, selectedIndex, localToWorld.ValueRO, visualizationOptions.DrawMassPoint);
+                        for (int z = min.z; z <= max.z; z++)
+                        {
+                            for (int x = min.x; x <= max.x; x++)
+                            {
+                                int3 cellCoord = new int3(x, y, z);
+                                int cellIndex = ScalarFieldUtility.CoordToIndex(cellCoord, cellGridSize);
+                                
+                                if (cellIndex >= 0 && cellIndex < cellBuffer.Length)
+                                {
+                                    DrawCell(cellBuffer[cellIndex], localToWorld.ValueRO, visualizationOptions.DrawEmptyCell);
+
+                                    // Dessiner les intersections d'arêtes pour cette cellule si activé
+                                    if (visualizationOptions.DrawEdgeIntersections)
+                                    {
+                                        DrawEdgeIntersectionsForCell(edgeIntersectionBuffer, cellIndex, localToWorld.ValueRO, visualizationOptions.DrawMassPoint);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
